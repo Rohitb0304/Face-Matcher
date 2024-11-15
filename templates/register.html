@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Register</title>
+    <link rel="stylesheet" href="https://cdn.tailwindcss.com">
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+
+</head>
+<body class="bg-gradient-to-r from-blue-500 via-purple-600 to-indigo-700 flex items-center justify-center min-h-screen">
+    <div class="w-full max-w-md bg-white p-8 rounded-lg shadow-md">
+        <h2 class="text-3xl font-semibold mb-4">Admin Registration</h2>
+        
+    <div class="w-full max-w-md bg-white p-8 rounded-lg shadow-md">
+        <form action="{{ url_for('register') }}" method="post">
+            <input type="text" name="username" placeholder="Username" class="w-full p-3 mb-4 border rounded-md" required>
+            <input type="password" name="password" placeholder="Password" class="w-full p-3 mb-4 border rounded-md" required>
+            <input type="password" name="confirm_password" placeholder="Confirm Password" class="w-full p-3 mb-4 border rounded-md" required>
+            <button type="submit" class="w-full p-3 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition">Register</button>
+        </form>
+    </div>
+    </div>
+</body>
+</html>

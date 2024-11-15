@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        /* Add a background color to visually confirm button location */
+        .create-button {
+            background-color: #00b5ad;
+            color: white;
+            padding: 1rem 2rem;
+            text-align: center;
+            font-size: 1.25rem;
+            font-weight: bold;
+            border-radius: 0.375rem;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center">
+
+    <div class="container mx-auto p-8 bg-white rounded-2xl shadow-2xl w-full md:w-3/4 lg:w-1/2 max-h-screen overflow-y-auto">
+        <!-- Header with Admin Greeting -->
+        <div class="flex justify-between items-center mb-8">
+            <h1 class="text-4xl font-semibold text-gray-800">Admin Dashboard</h1>
+            {% if admin %}
+                <div class="text-gray-700 text-xl">
+                    Welcome, <span class="font-semibold text-indigo-600">{{ admin.username }}</span>!
+                    <a href="{{ url_for('logout') }}" class="ml-6 text-red-600 hover:text-red-800 text-lg">Logout</a>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Flash messages -->
+        {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <div class="bg-green-100 text-green-800 p-6 mb-6 rounded-md text-xl">
+                <strong>{{ messages[0] }}</strong>
+            </div>
+        {% endif %}
+        {% endwith %}
+        
+        <!-- Button to create a new event -->
+        <form action="{{ url_for('create_event') }}" method="GET">
+            <button type="submit" class="create-button mb-8">Create New Event</button>
+        </form>
+        
+        <!-- List of Events -->
+        <h2 class="text-3xl font-semibold mb-6 text-gray-800">Your Events</h2>
+        {% if events %}
+            <ul class="space-y-8">
+                {% for event in events %}
+                    <li class="bg-white p-8 rounded-2xl shadow-2xl hover:shadow-2xl transition duration-300">
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <a href="{{ url_for('manage_event', event_id=event.unique_id) }}" class="text-2xl text-teal-600 font-semibold hover:text-teal-700">{{ event.name }}</a>
+                                <p class="text-xl text-gray-600 mt-2">Date: {{ event.date }}</p>
+                            </div>
+                            <!-- Delete Button -->
+                            <form action="{{ url_for('delete_event', event_id=event.unique_id) }}" method="POST">
+                                <button type="submit" class="ml-6 text-red-600 hover:text-red-800 text-lg font-semibold">Delete</button>
+                            </form>
+                        </div>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p class="text-gray-700 text-xl">No events found. Start by creating one!</p>
+        {% endif %}
+    </div>
+
+</body>
+</html>

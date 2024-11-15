@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Event</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <script>
+        // Toggle images section visibility
+        function toggleImages() {
+            var imagesSection = document.getElementById('imagesSection');
+            imagesSection.style.display = imagesSection.style.display === 'none' ? 'grid' : 'none';
+        }
+
+        // Copy Event ID to Clipboard
+        function copyEventID() {
+            const eventId = '{{ event.unique_id }}';
+            navigator.clipboard.writeText(eventId)
+                .then(() => alert('Event ID copied to clipboard!'))
+                .catch((err) => alert('Failed to copy Event ID: ' + err));
+        }
+
+        // Download QR Code
+        function downloadQRCode() {
+            const qrImageUrl = '{{ url_for("generate_qr_code", event_id=event.unique_id) }}';
+            const a = document.createElement('a');
+            a.href = qrImageUrl;
+            a.download = '{{ event.unique_id }}_qr_code.png';
+            a.click();
+        }
+
+        // Handle File Upload with Progress Bar
+        function handleFileUpload(event) {
+            event.preventDefault();
+            var formData = new FormData(event.target);
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', '{{ url_for("admin_upload", event_id=event.unique_id) }}', true);
+
+            // Update progress bar
+            xhr.upload.onprogress = function(e) {
+                if (e.lengthComputable) {
+                    var percent = (e.loaded / e.total) * 100;
+                    document.getElementById('progressBar').style.width = percent + '%';
+                }
+            };
+
+            xhr.onload = function() {
+                if (xhr.status == 200) {
+                    // Handle success
+                    alert('Files uploaded successfully!');
+                    location.reload(); // Refresh page to show uploaded images
+                } else {
+                    // Handle error
+                    alert('An error occurred while uploading files.');
+                }
+            };
+
+            xhr.send(formData);
+        }
+    </script>
+</head>
+<body class="bg-gray-100 font-sans antialiased">
+
+    <!-- Navbar -->
+    <nav class="bg-teal-600 p-4 shadow-lg">
+        <div class="container mx-auto flex justify-between items-center">
+            <button class="text-white font-bold text-lg" onclick="window.location.href='/dashboard'">Back to Dashboard</button>
+            <div class="flex items-center">
+                <span class="text-white mr-4">{{ session['admin_username'] }}</span>
+                <button class="bg-red-600 px-4 py-2 text-white rounded-md hover:bg-red-700" onclick="window.location.href='/logout'">Logout</button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mx-auto px-6 py-12">
+
+        <!-- Heading Section -->
+        <h1 class="text-3xl font-bold text-center text-gray-900 mb-8">Manage Event: <span class="text-teal-600">{{ event.name }}</span></h1>
+
+        <!-- Event Details Update Form -->
+        <div class="bg-white shadow-xl rounded-lg p-8 mb-8">
+            <h2 class="text-2xl font-semibold text-gray-800 mb-6">Update Event Details</h2>
+            <form action="{{ url_for('manage_event', event_id=event.unique_id) }}" method="POST">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
+                    <input type="text" name="event_name" value="{{ event.name }}" class="w-full p-4 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent" placeholder="Event Name">
+                    <input type="date" name="event_date" value="{{ event.date }}" class="w-full p-4 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent" placeholder="Event Date">
+                </div>
+                <button type="submit" class="w-full p-4 bg-teal-600 text-white rounded-md hover:bg-teal-700 transition duration-300">Update Event</button>
+            </form>
+        </div>
+
+        <!-- Event ID Section -->
+        <div class="bg-white shadow-xl rounded-lg p-8 mb-8">
+            <h2 class="text-2xl font-semibold text-gray-800 mb-4">Event ID: <span class="text-teal-600">{{ event.unique_id }}</span></h2>
+            <button class="px-6 py-3 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition duration-300" onclick="copyEventID()">Copy Event ID</button>
+        </div>
+
+        <!-- QR Code Section -->
+        <div class="bg-white shadow-xl rounded-lg p-8 mb-8">
+            <h2 class="text-2xl font-semibold text-gray-800 mb-4">QR Code for Event ID</h2>
+            <div class="flex flex-col items-center">
+                <img src="{{ url_for('generate_qr_code', event_id=event.unique_id) }}" alt="QR Code" class="w-64 h-64 rounded-md shadow-md mb-4">
+                <button class="px-6 py-3 bg-green-600 text-white rounded-md hover:bg-green-700 transition duration-300" onclick="downloadQRCode()">Download QR Code</button>
+            </div>
+        </div>
+
+        <!-- Image Upload Section -->
+        <div class="bg-white shadow-xl rounded-lg p-8 mb-8">
+            <h2 class="text-2xl font-semibold text-gray-800 mb-4">Upload Images</h2>
+            <form id="uploadForm" onsubmit="handleFileUpload(event)" enctype="multipart/form-data">
+                <input type="file" name="files" multiple class="w-full p-4 mb-6 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent">
+                <button type="submit" class="w-full p-4 bg-green-600 text-white rounded-md hover:bg-green-700 transition duration-300">Upload Images</button>
+            </form>
+
+            <!-- Progress Bar -->
+            <div class="mt-4">
+                <div class="bg-gray-300 rounded-full h-2 w-full">
+                    <div id="progressBar" class="bg-teal-600 h-2 rounded-full w-0"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Toggle Button for Uploaded Images -->
+        <button onclick="toggleImages()" class="w-full px-6 py-3 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 transition duration-300 mb-8">Toggle Uploaded Images</button>
+
+        <!-- Display Uploaded Images Section -->
+        <div id="imagesSection" class="grid grid-cols-1 sm:grid-cols-3 gap-6" style="display: none;">
+            <h2 class="col-span-3 text-xl font-semibold text-center text-gray-800 mb-6">Uploaded Images</h2>
+            {% if images %}
+                {% for image in images %}
+                    <div class="image-container bg-white shadow-md rounded-lg overflow-hidden">
+                        <img src="{{ image.cloudinary_url }}" alt="{{ image.filename }}" class="w-full h-auto rounded-md">
+                    </div>
+                {% endfor %}
+            {% else %}
+                <p class="col-span-3 text-center text-lg text-gray-500">No images uploaded yet.</p>
+            {% endif %}
+        </div>
+    </div>
+
+</body>
+</html>

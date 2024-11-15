@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home Page - AI Image Manager</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        /* Background Pattern */
+        .pattern-bg {
+            background-image: url('https://www.toptal.com/designers/subtlepatterns/patterns/diagonal_stripes.png');
+        }
+
+        /* Animation for fading in */
+        @keyframes fadeIn {
+            0% { opacity: 0; }
+            100% { opacity: 1; }
+        }
+
+        .fade-in {
+            animation: fadeIn 1.5s ease-in-out;
+        }
+
+        /* Button Animations */
+        .btn-hover {
+            transition: all 0.3s ease;
+        }
+
+        .btn-hover:hover {
+            transform: scale(1.05);
+            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Custom Colors */
+        .bg-dark { background-color: #121212; }
+        .bg-turquoise { background-color: #1abc9c; }
+        .bg-turquoise-dark { background-color: #16a085; }
+        .text-light { color: #f1f1f1; }
+        .highlight { color: #FFD700; }
+        .text-turquoise { color: #1abc9c; }
+        .text-muted { color: #aaa; }
+        .button-primary { background-color: #1abc9c; }
+        .button-primary:hover { background-color: #16a085; }
+    </style>
+</head>
+<body class="bg-dark min-h-screen flex flex-col justify-center items-center py-16 pattern-bg">
+
+    <!-- Navbar (Admin Login/Register on top-right) -->
+    <div class="absolute top-6 right-6 space-x-4">
+        <a href="{{ url_for('login') }}" class="text-white bg-blue-600 py-2 px-4 rounded-lg text-lg hover:bg-blue-700 btn-hover transition">Admin Login</a>
+        <a href="{{ url_for('register') }}" class="text-white bg-green-600 py-2 px-4 rounded-lg text-lg hover:bg-green-700 btn-hover transition">Admin Register</a>
+    </div>
+
+    <!-- Main Content Section -->
+    <div class="text-center text-light mb-12 fade-in">
+        <h1 class="text-5xl font-bold mb-6 text-white">Welcome to AI Image Manager</h1>
+        <p class="text-xl mb-6">AI Image Manager helps you effortlessly find, organize, and manage your event images with advanced AI technology.</p>
+        <p class="text-lg text-muted mb-6">Our platform simplifies the process of identifying, sorting, and managing images, making it easy to find and tag images for any event. Whether you’re hosting a small gathering or managing a large-scale event, our AI-powered tools ensure that your images are matched and organized in seconds.</p>
+        <p class="text-lg text-muted">With AI, your image management is streamlined—automatically detect faces, categorize photos, and download images with just a click.</p>
+    </div>
+
+    <!-- Key Features Section -->
+    <div class="text-light text-center mb-12 fade-in">
+        <h2 class="text-3xl font-semibold text-white mb-6">Key Features</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div class="bg-gray-800 p-6 rounded-lg shadow-lg">
+                <h3 class="text-xl text-white font-semibold mb-4">AI-Powered Face Recognition</h3>
+                <p class="text-gray-300">Automatically recognize and categorize faces in your images to organize them efficiently for your events.</p>
+            </div>
+            <div class="bg-gray-800 p-6 rounded-lg shadow-lg">
+                <h3 class="text-xl text-white font-semibold mb-4">Easy Image Management</h3>
+                <p class="text-gray-300">Find and tag images effortlessly. Quickly sort images into event categories with our smart organization system.</p>
+            </div>
+            <div class="bg-gray-800 p-6 rounded-lg shadow-lg">
+                <h3 class="text-xl text-white font-semibold mb-4">Bulk Image Download</h3>
+                <p class="text-gray-300">Select multiple images and download them all at once, or get your entire event's image collection in a zip file.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Call to Action Button -->
+    <div class="mb-12 fade-in">
+        <a href="{{ url_for('user_upload') }}" class="button-primary text-white py-4 px-6 rounded-lg text-2xl text-center hover:bg-turquoise-dark btn-hover transition duration-300">
+            Find Your Images for Your Event
+        </a>
+    </div>
+
+    <!-- Footer Section -->
+    <div class="w-full py-10 bg-gray-900 text-center text-gray-500 fade-in">
+        <p>&copy; 2024 AI Image Manager. All Rights Reserved.</p>
+    </div>
+</body>
+</html>

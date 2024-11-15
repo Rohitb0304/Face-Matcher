@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Create Event</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gradient-to-r from-yellow-400 via-orange-500 to-red-600 min-h-screen flex items-center justify-center">
+
+    <div class="w-full max-w-md bg-white p-8 rounded-lg shadow-md">
+        <h2 class="text-3xl font-semibold mb-4 text-center">Create Event</h2>
+
+        {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <div class="bg-green-100 text-green-800 p-4 mb-4 rounded-md">
+                <strong>{{ messages[0] }}</strong>
+            </div>
+        {% endif %}
+        {% endwith %}
+
+        <form action="{{ url_for('create_event') }}" method="post">
+            <input type="text" name="event_name" id="event_name" placeholder="Event Name" class="w-full p-3 mb-4 border rounded-md" required oninput="generateEventId()">
+            <input type="date" name="event_date" placeholder="Event Date" class="w-full p-3 mb-4 border rounded-md" required>
+            <input type="text" id="event_id" name="event_id" readonly placeholder="Event ID" class="w-full p-3 mb-4 border rounded-md bg-gray-200 text-gray-500">
+
+            <button type="submit" class="w-full p-3 bg-blue-500 text-white rounded-md">Create Event</button>
+        </form>
+    </div>
+
+    <script>
+        function generateEventId() {
+            const eventName = document.getElementById('event_name').value.trim();
+            const eventId = eventName.toLowerCase().replace(/\s+/g, '-') + '-' + Math.floor(Math.random() * 9000 + 1000);
+            document.getElementById('event_id').value = eventId;
+        }
+    </script>
+</body>
+</html>

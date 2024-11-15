@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Matched Faces</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        /* Custom Hover Effects */
+        .btn-hover:hover {
+            transform: scale(1.05);
+            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .card-hover:hover {
+            transform: scale(1.03);
+            box-shadow: 0px 6px 18px rgba(0, 0, 0, 0.2);
+        }
+
+        .img-hover:hover {
+            transform: scale(1.1);
+        }
+    </style>
+</head>
+
+<body class="bg-gray-50 font-sans antialiased">
+
+    <!-- Main Container -->
+    <div class="max-w-6xl mx-auto p-8 bg-white rounded-lg shadow-xl">
+
+        <!-- Header Section -->
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-4xl font-semibold text-gray-900">{{ event.name }}</h1>
+            <div class="flex space-x-4">
+                <a href="{{ url_for('index') }}" class="btn-hover text-white bg-gray-800 hover:bg-gray-700 px-6 py-3 rounded-md transition duration-300">Back to Events</a>
+                <a href="{{ url_for('user_upload') }}" class="btn-hover text-white bg-gray-800 hover:bg-gray-700 px-6 py-3 rounded-md transition duration-300">Back to Uploads</a>
+            </div>
+        </div>
+
+        <!-- Event Date -->
+        <p class="text-xl text-gray-600 mb-4">Event Date: <span class="font-semibold text-gray-800">{{ event.date }}</span></p>
+
+        <!-- Matched Faces Section -->
+        {% if matched_images %}
+            <h2 class="text-3xl font-semibold text-gray-900 mb-6">Matched Faces Found</h2>
+
+            <!-- Image Grid -->
+            <ul class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+                {% for image in matched_images %}
+                    <li class="bg-white p-6 rounded-xl shadow-lg card-hover transition duration-300">
+                        <img src="{{ image.cloudinary_url }}" alt="{{ image.filename }}" class="w-full h-48 object-cover rounded-md mb-4 img-hover transition-transform duration-300">
+                        <p class="text-center text-base font-medium text-gray-700 truncate">{{ image.filename }}</p>
+                        <div class="flex justify-center mt-4">
+                            <a href="{{ url_for('download_image', image_id=image.id) }}"
+                                class="btn-hover text-white bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-md text-sm transition duration-200">Download</a>
+                        </div>
+                    </li>
+                {% endfor %}
+            </ul>
+
+            <!-- Download All Button -->
+            <div class="flex justify-center mt-8">
+                <a href="{{ url_for('download_images_zip', event_id=event.unique_id) }}"
+                    class="btn-hover text-white bg-green-600 hover:bg-green-700 px-8 py-4 rounded-lg text-lg transition duration-300">Download All as ZIP</a>
+            </div>
+        {% else %}
+            <!-- No Matched Faces Found Message -->
+            <p class="text-center text-lg text-gray-600">No matched faces found.</p>
+        {% endif %}
+    </div>
+
+</body>
+
+</html>
