@@ -1,0 +1,32 @@
+# Python specific
+*.pyc
+__pycache__/
+
+# Virtual environment
+venv/
+
+# Flask instance folder
+instance/
+
+# Flask migrations
+migrations/
+
+# Database
+*.sqlite
+
+app1.md
+
+app2.md
+
+# Environment variables file
+.env
+
+# Cloudinary uploaded files
+cloudinary/
+
+# IDE specific files
+.vscode/
+.idea/
+
+# MacOS specific files
+.DS_Store
