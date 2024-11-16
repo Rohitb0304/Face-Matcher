@@ -28,8 +28,17 @@ db.init_app(app)
 migrate = Migrate(app, db)
 
 MAX_SIZE_MB = 10
+app.config['MAX_CONTENT_LENGTH'] = 30 * 1024 * 1024  # 30MB
 MAX_PIXELS = (1920, 1080)
 ALLOWED_EXTENSIONS = {'jpg', 'jpeg', 'png'}
+
+from werkzeug.exceptions import RequestEntityTooLarge
+
+@app.errorhandler(RequestEntityTooLarge)
+def handle_file_too_large_error(error):
+    flash("The file is too large. Please upload a smaller file.", 'error')
+    return redirect(url_for('user_upload'))
+
 
 def allowed_file(filename):
     """Check if the file has an allowed extension."""
@@ -165,6 +174,8 @@ def manage_event(event_id):
 
     return render_template('manage_event.html', event=event, images=images)
 
+import base64
+
 # User image upload route
 @app.route('/user_upload', methods=['GET', 'POST'])
 def user_upload():
@@ -173,7 +184,7 @@ def user_upload():
         event = Event.query.filter_by(unique_id=event_id).first()
 
         if not event:
-            flash("Event not found. Please check the Event ID and try again.")
+            flash("Event not found. Please check the Event ID and try again.", 'error')
             return redirect(url_for('user_upload'))
 
         return render_template('user_upload.html', event=event)
@@ -182,60 +193,88 @@ def user_upload():
         event_id = request.form.get('event_id')
         event = Event.query.filter_by(unique_id=event_id).first_or_404()
 
-        # Check if a file is uploaded
-        if 'file' not in request.files or request.files['file'].filename == '':
-            flash('Please select a file to upload.')
+        # Get the base64 image data sent from the frontend (webcam capture)
+        image_data = request.form.get('image')
+
+        # Check for image size before processing
+        if image_data:
+            image_size = len(image_data)
+            if image_size > MAX_SIZE_MB * 1024 * 1024:
+                flash("The image is too large. Please upload a smaller image.", "error")
+                return redirect(url_for('user_upload', event_id=event_id))
+
+        if not image_data:
+            flash('No image data found in the request.', 'error')
             return redirect(url_for('user_upload', event_id=event_id))
 
-        file = request.files['file']
-        
+        # Remove base64 prefix (data:image/png;base64,)
         try:
-            uploaded_image = face_recognition.load_image_file(file)
-            uploaded_encoding = face_recognition.face_encodings(uploaded_image)
+            image_data = image_data.split(",")[1]  # Strip out the base64 prefix
+        except IndexError:
+            flash('Invalid image data format.', 'error')
+            return redirect(url_for('user_upload', event_id=event_id))
+
+        try:
+            # Decode the image from base64
+            img_bytes = base64.b64decode(image_data)
+            img = PILImage.open(io.BytesIO(img_bytes))  # Open the image from bytes
+
+            # Verify the image immediately after opening
+            img.verify()  # Verifies if the image is corrupted
+            img = PILImage.open(io.BytesIO(img_bytes))  # Reopen the image after verification
+
+            # Resize the image to reduce its size while keeping the aspect ratio
+            img.thumbnail(MAX_PIXELS)
+
         except Exception as e:
-            # If there is an error loading the image (invalid format, etc.), flash a user-friendly error message.
-            flash(f"Error processing image: {str(e)}. Please try again with a valid image.")
+            flash(f"Error processing image: {str(e)}. Please upload a valid image.", 'error')
             return redirect(url_for('user_upload', event_id=event_id))
 
-        if not uploaded_encoding:
-            flash('No face found in the uploaded image. Please try again with a different photo.')
+        # Perform face recognition
+        try:
+            uploaded_image = face_recognition.load_image_file(io.BytesIO(img_bytes))
+            uploaded_encoding = face_recognition.face_encodings(uploaded_image)
+
+            if not uploaded_encoding:
+                flash('No face found in the captured image. Please try again with a different photo.', 'error')
+                return redirect(url_for('user_upload', event_id=event_id))
+
+            uploaded_encoding = uploaded_encoding[0]  # Get the first face encoding
+            matched_images = []
+
+            # Compare with faces in the event's images stored in the database
+            for db_image in Image.query.filter_by(event_id=event.id).all():
+                try:
+                    response = requests.get(db_image.cloudinary_url)
+                    response.raise_for_status()
+
+                    db_image_file = face_recognition.load_image_file(io.BytesIO(response.content))
+                    db_encoding = face_recognition.face_encodings(db_image_file)
+
+                    if db_encoding and face_recognition.compare_faces([db_encoding[0]], uploaded_encoding, tolerance=0.6)[0]:
+                        matched_images.append(db_image)
+
+                except requests.exceptions.RequestException as e:
+                    print(f"Error fetching image from Cloudinary URL: {db_image.cloudinary_url}. Error: {e}")
+                    continue
+                except PIL.UnidentifiedImageError as e:
+                    print(f"Cannot identify image at {db_image.cloudinary_url}. Error: {e}")
+                    continue
+                except Exception as e:
+                    print(f"Error processing image: {str(e)}")
+                    continue
+
+            if not matched_images:
+                flash('No matched faces found in the event images. Please try another photo.', 'info')
+
+            return render_template('user_results.html', matched_images=matched_images, event=event)
+
+        except Exception as e:
+            flash(f"Error processing face recognition: {str(e)}. Please try again with a valid image.", 'error')
             return redirect(url_for('user_upload', event_id=event_id))
-
-        uploaded_encoding = uploaded_encoding[0]
-        matched_images = []
-
-        for db_image in Image.query.filter_by(event_id=event.id).all():
-            try:
-                response = requests.get(db_image.cloudinary_url)
-                response.raise_for_status()  # Ensure that the URL is valid
-
-                # Try to load and process the image from the URL
-                db_image_file = face_recognition.load_image_file(io.BytesIO(response.content))
-                db_encoding = face_recognition.face_encodings(db_image_file)
-
-                if db_encoding and face_recognition.compare_faces([db_encoding[0]], uploaded_encoding, tolerance=0.6)[0]:
-                    matched_images.append(db_image)
-
-            except requests.exceptions.RequestException as e:
-                # Log error if image URL fetch fails (invalid URL, network issues, etc.)
-                print(f"Error fetching image from Cloudinary URL: {db_image.cloudinary_url}. Error: {e}")
-                continue
-            except PIL.UnidentifiedImageError as e:
-                # Log error if image cannot be identified (not a valid image)
-                print(f"Cannot identify image at {db_image.cloudinary_url}. Error: {e}")
-                continue
-            except Exception as e:
-                # Catch any other unforeseen errors
-                print(f"Error processing image: {str(e)}")
-                continue
-
-        # Check if any matched images were found
-        if not matched_images:
-            flash('No matched faces found in the event images. Please try another photo.', 'info')
-
-        return render_template('user_results.html', matched_images=matched_images, event=event)
 
     return render_template('user_upload.html')
+
 
 from tempfile import NamedTemporaryFile
 import shutil
@@ -407,18 +446,17 @@ def download_images_zip(event_id):
     # Fetch the event from the database using the unique event ID
     event = Event.query.filter_by(unique_id=event_id).first_or_404()
     
-    # Get all matched images for the event
-    matched_images = Image.query.filter_by(event_id=event.id, is_matched=True).all()
+    # Get all images for the event (without filtering for is_matched)
+    images = Image.query.filter_by(event_id=event.id).all()
     
-    if not matched_images:
-        return "No matched images found for this event.", 404
+    if not images:
+        return "No images found for this event.", 404
     
     # Remove duplicate images based on the filename (or URL)
-    # Using a set to track seen filenames or URLs
     seen_filenames = set()
     unique_images = []
     
-    for image in matched_images:
+    for image in images:
         if image.filename not in seen_filenames:
             seen_filenames.add(image.filename)
             unique_images.append(image)
@@ -445,7 +483,7 @@ def download_images_zip(event_id):
     return send_file(
         zip_io,
         as_attachment=True,
-        download_name=f"{event.name}_matched_images.zip",
+        download_name=f"{event.name}_{event_id}_images.zip",
         mimetype='application/zip'
     )
 
