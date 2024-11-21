@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>User Upload</title>
+    <title>Scan Your Face</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <style>
         /* Custom Color Scheme */
@@ -121,6 +121,16 @@
             width: 100%;
         }
 
+        #video {
+            width: 100%;
+            max-width: 400px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+        }
+
+        #canvas {
+            display: none;
+        }
     </style>
 </head>
 
@@ -134,7 +144,7 @@
     </div>
 
     <div class="max-w-4xl mx-auto p-8 bg-white rounded-lg shadow-lg">
-        <h1 class="text-3xl font-semibold text-gray-800 mb-6 text-center">Upload Your Face Image to Find Photos from the Event</h1>
+        <h1 class="text-3xl font-semibold text-gray-800 mb-6 text-center">Scan Your Face to Find Photos from the Event</h1>
 
         <!-- Event ID Input Form -->
         <form method="GET" action="{{ url_for('user_upload') }}" class="bg-white p-6 rounded-lg shadow-md mb-6">
@@ -167,19 +177,21 @@
         {% endif %}
         {% endwith %}
 
-        <!-- File Upload Form -->
-        <form method="POST" enctype="multipart/form-data" class="bg-white p-6 rounded-lg shadow-md">
+        <!-- Face Scanning Interface -->
+        <div class="form-group">
+            <label for="camera" class="text-gray-700">Use your Camera</label>
+            <video id="video" autoplay></video>
+            <canvas id="canvas"></canvas>
+        </div>
+        
+        <button type="button" class="form-btn btn-hover" id="capture-btn">Capture Image</button>
+        <form id="scan-form" method="POST" action="{{ url_for('user_upload') }}" enctype="multipart/form-data" style="display:none;">
             <input type="hidden" name="event_id" value="{{ event.unique_id }}">
-
-            <div class="form-group">
-                <label for="file" class="text-gray-700">Upload Your Face</label>
-                <input type="file" name="file" id="file" required class="form-input">
-            </div>
-
-            <button type="submit" class="form-btn btn-hover">Submit</button>
+            <input type="hidden" name="image" id="image-data">
+            <button type="submit" style="display:none;" id="submit-scan"></button>
         </form>
+        
 
-        <!-- Back Button -->
         <div class="mt-6 text-center">
             <a href="{{ url_for('index') }}" class="inline-block text-turquoise hover:text-turquoise-dark font-semibold text-lg">
                 <button class="back-btn">Back to Events</button>
@@ -191,6 +203,37 @@
         <p class="text-red text-center mt-6 font-semibold">Event not found. Please try again with a valid Event ID.</p>
         {% endif %}
     </div>
+
+    <script>
+        // Get video element and canvas
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const context = canvas.getContext('2d');
+        const captureButton = document.getElementById('capture-btn');
+        const submitButton = document.getElementById('submit-scan');
+        const imageDataField = document.getElementById('image-data');
+        
+        // Start webcam
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then(stream => {
+                video.srcObject = stream;
+            })
+            .catch(err => console.error("Error accessing webcam: ", err));
+
+        // Capture image from webcam
+        captureButton.addEventListener('click', function () {
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            // Convert canvas to image data
+            const imageData = canvas.toDataURL('image/png');
+            imageDataField.value = imageData;
+
+            // Submit the form
+            document.getElementById("scan-form").submit();  // This will submit the form correctly
+        });
+    </script>
 
 </body>
 

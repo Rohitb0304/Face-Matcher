@@ -29,28 +29,37 @@
             a.click();
         }
 
-        // Handle File Upload with Progress Bar
+        // Handle File Upload with Progress Bar and File Counter
         function handleFileUpload(event) {
             event.preventDefault();
             var formData = new FormData(event.target);
             var xhr = new XMLHttpRequest();
             xhr.open('POST', '{{ url_for("admin_upload", event_id=event.unique_id) }}', true);
 
-            // Update progress bar
+            var totalFiles = formData.getAll('files').length;
+            var uploadedFiles = 0;
+
+            // Update progress bar and file counter
             xhr.upload.onprogress = function(e) {
                 if (e.lengthComputable) {
                     var percent = (e.loaded / e.total) * 100;
                     document.getElementById('progressBar').style.width = percent + '%';
+                    document.getElementById('progressText').innerText = Math.round(percent) + '%';
                 }
             };
 
+            // Update file counter during upload
             xhr.onload = function() {
                 if (xhr.status == 200) {
-                    // Handle success
-                    alert('Files uploaded successfully!');
-                    location.reload(); // Refresh page to show uploaded images
+                    uploadedFiles++;
+                    document.getElementById('uploadedFiles').innerText = uploadedFiles;
+                    document.getElementById('totalFiles').innerText = totalFiles;
+
+                    if (uploadedFiles === totalFiles) {
+                        alert('All files uploaded successfully!');
+                        location.reload(); // Refresh page to show uploaded images
+                    }
                 } else {
-                    // Handle error
                     alert('An error occurred while uploading files.');
                 }
             };
@@ -112,10 +121,14 @@
                 <button type="submit" class="w-full p-4 bg-green-600 text-white rounded-md hover:bg-green-700 transition duration-300">Upload Images</button>
             </form>
 
-            <!-- Progress Bar -->
+            <!-- Progress Bar and File Counter -->
             <div class="mt-4">
                 <div class="bg-gray-300 rounded-full h-2 w-full">
-                    <div id="progressBar" class="bg-teal-600 h-2 rounded-full w-0"></div>
+                    <div id="progressBar" class="bg-teal-600 h-2 rounded-full w-0 transition-all duration-300"></div>
+                </div>
+                <div class="flex justify-between mt-2">
+                    <span id="progressText" class="text-sm text-gray-500">0%</span>
+                    <span id="fileCounter" class="text-sm text-gray-500">Uploaded: <span id="uploadedFiles">0</span> / <span id="totalFiles">0</span></span>
                 </div>
             </div>
         </div>
