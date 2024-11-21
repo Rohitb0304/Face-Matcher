@@ -1,28 +1,35 @@
-# Base image with Python
+# Use a base Python image
 FROM python:3.9-slim
 
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 
-# Set the working directory
+# Install necessary system dependencies
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    cmake \
+    gfortran \
+    libopenblas-dev \
+    liblapack-dev \
+    libx11-dev \
+    libboost-all-dev \
+    libjpeg-dev \
+    zlib1g-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create and set the working directory
 WORKDIR /app
 
-# Copy requirements file
+# Copy the requirements file
 COPY requirements.txt /app/
 
-# Install dependencies
-RUN pip install --no-cache-dir -r requirements.txt
+# Install Python dependencies
+RUN pip install --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
 
-# Copy application files
+# Copy the application code
 COPY . /app/
 
-# Expose the port the app runs on
-EXPOSE 5000
-
-# Set Flask environment variables
-ENV FLASK_APP=app.py
-ENV FLASK_ENV=development
-
-# Run migrations and the app
-CMD ["bash", "-c", "flask db init && flask db migrate && flask db upgrade && python app.py"]
+# Set the entry point (if applicable)
+CMD ["python", "app.py"]  # Replace with your app's entry point
