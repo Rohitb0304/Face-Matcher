@@ -24,7 +24,7 @@ WORKDIR /app
 # Copy the requirements file
 COPY requirements.txt /app/
 
-# Install Python dependencies
+# Install Python dependencies (including using pre-built dlib wheels)
 RUN pip install --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
