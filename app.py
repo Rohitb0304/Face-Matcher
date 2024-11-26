@@ -10,7 +10,7 @@ import requests
 import qrcode
 import cloudinary
 import cloudinary.uploader
-from flask import Flask, render_template, request, redirect, send_file, url_for, session, flash, Response
+from flask import Flask, jsonify, render_template, request, redirect, send_file, url_for, session, flash, Response
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from models import db, Admin, Event, Image
@@ -19,9 +19,14 @@ from PIL import Image as PILImage
 from datetime import datetime
 import face_recognition
 from flask_migrate import Migrate
+from flask_wtf.csrf import CSRFProtect
 
 app = Flask(__name__)
 app.config.from_object(Config)
+app.config['SECRET_KEY'] = '6633b749e8afcc73149c758c29926fc973c31109bdc0f1ce11942c690a025d09'
+
+# Initialize CSRF protection
+csrf = CSRFProtect(app)
 
 # Initialize database and migration
 db.init_app(app)
@@ -279,6 +284,9 @@ def user_upload():
 from tempfile import NamedTemporaryFile
 import shutil
 
+import logging
+logging.basicConfig(level=logging.DEBUG)
+
 @app.route('/admin_upload/<string:event_id>', methods=['POST'])
 def admin_upload(event_id):
     try:
@@ -287,30 +295,35 @@ def admin_upload(event_id):
 
         if 'files' not in request.files:
             flash('No files were uploaded.', 'error')
+            logging.debug("No files uploaded.")
             return redirect(url_for('manage_event', event_id=event.unique_id))
 
         files = request.files.getlist('files')
         if not files:
             flash('No files selected for upload.', 'error')
+            logging.debug("No files selected.")
             return redirect(url_for('manage_event', event_id=event.unique_id))
 
         total_files = len(files)
         uploaded_files = 0  # Keep track of uploaded files
+        logging.debug(f"Total files to upload: {total_files}")
 
-        # Iterate over the files to upload
         for file in files:
             if file.filename == '':
                 flash('Empty file detected, skipping.', 'error')
+                logging.debug(f"Empty file detected: {file}")
                 continue
 
             filename = secure_filename(file.filename)
             if not allowed_file(filename):
                 flash(f"File {filename} is not an allowed type. Only JPG, JPEG, PNG are allowed.", 'error')
+                logging.debug(f"Invalid file type: {filename}")
                 continue
 
             file.seek(0)  # Check file size
             if len(file.read()) > MAX_SIZE_MB * 1024 * 1024:
                 flash(f"File {filename} exceeds the {MAX_SIZE_MB}MB size limit.", 'error')
+                logging.debug(f"File {filename} exceeds size limit.")
                 continue
 
             file.seek(0)  # Reset the file pointer after checking size
@@ -347,17 +360,18 @@ def admin_upload(event_id):
 
                 # Provide feedback for each uploaded file
                 flash(f"File {filename} uploaded successfully!", 'success')
+                logging.debug(f"File {filename} uploaded successfully!")
 
             except Exception as e:
                 db.session.rollback()  # Rollback in case of error
                 flash(f"Error during upload of {filename}: {str(e)}", 'error')
+                logging.debug(f"Error during upload of {filename}: {str(e)}")
 
             finally:
                 os.remove(tmp_file_path)  # Clean up temporary file
 
             # Simulate progress feedback
             progress_percentage = (uploaded_files / total_files) * 100
-            # Flash message for progress (can be replaced with actual progress bar on frontend)
             flash(f"Upload progress: {int(progress_percentage)}% completed.", 'info')
 
         # Final message once all files are uploaded
@@ -368,7 +382,37 @@ def admin_upload(event_id):
     except Exception as e:
         db.session.rollback()  # Rollback on unexpected error
         flash(f"An unexpected error occurred: {str(e)}", 'error')
+        logging.debug(f"Unexpected error: {str(e)}")
         return redirect(url_for('manage_event', event_id=event_id))
+
+    
+@app.route('/save_image', methods=['POST'])
+def save_image():
+    try:
+        data = request.get_json()
+        image_url = data['imageUrl']
+        public_id = data['publicId']
+        event_id = data['eventId']
+
+        # Ensure the event exists
+        event = Event.query.filter_by(unique_id=event_id).first_or_404()
+
+        # Save the image details to the database
+        new_image = Image(
+            filename=public_id,  # Use public_id or the original filename
+            cloudinary_url=image_url,
+            public_id=public_id,
+            event_id=event.id
+        )
+
+        db.session.add(new_image)
+        db.session.commit()
+
+        return jsonify(success=True)
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify(success=False, error=str(e))
 
 # Delete image route
 @app.route('/delete_image/<int:image_id>', methods=['POST'])
@@ -445,36 +489,28 @@ def download_image(image_id):
 def download_images_zip(event_id):
     # Fetch the event from the database using the unique event ID
     event = Event.query.filter_by(unique_id=event_id).first_or_404()
-    
-    # Get all images for the event (without filtering for is_matched)
-    images = Image.query.filter_by(event_id=event.id).all()
-    
+
+    # Get all matched images for the event (only images that have `is_matched=True`)
+    images = Image.query.filter_by(event_id=event.id, is_matched=True).all()
+
     if not images:
-        return "No images found for this event.", 404
-    
-    # Remove duplicate images based on the filename (or URL)
-    seen_filenames = set()
-    unique_images = []
-    
-    for image in images:
-        if image.filename not in seen_filenames:
-            seen_filenames.add(image.filename)
-            unique_images.append(image)
+        flash(f'No matched images found for this event.', 'warning')
+        return redirect(request.referrer)  # Redirect the user to the previous page or event page
     
     # Create a BytesIO object to store the zip file in memory
     zip_io = BytesIO()
 
     with zipfile.ZipFile(zip_io, 'w', zipfile.ZIP_DEFLATED) as zip_file:
-        for image in unique_images:
+        for image in images:
             # Download the image from Cloudinary
             response = requests.get(image.cloudinary_url)
             
             if response.status_code == 200:
-                # Write each image to the zip file using the filename as the archive name
+                # Write each matched image to the zip file using the filename as the archive name
                 zip_file.writestr(image.filename, response.content)
             else:
                 # Log an error or handle the case where the image can't be fetched
-                print(f"Failed to fetch image: {image.filename}")
+                flash(f"Failed to fetch image: {image.filename}", 'error')
 
     # Rewind the BytesIO object to the beginning so it can be read
     zip_io.seek(0)
@@ -483,7 +519,7 @@ def download_images_zip(event_id):
     return send_file(
         zip_io,
         as_attachment=True,
-        download_name=f"{event.name}_{event_id}_images.zip",
+        download_name=f"{event.name}_{event_id}_matched_images.zip",
         mimetype='application/zip'
     )
 

@@ -1,4 +1,5 @@
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import Boolean
 
 db = SQLAlchemy()
 
@@ -24,4 +25,8 @@ class Image(db.Model):
     cloudinary_url = db.Column(db.String(255), nullable=False)
     public_id = db.Column(db.String(255), nullable=False)
     event_id = db.Column(db.Integer, db.ForeignKey('events.id'), nullable=False)
-    event = db.relationship('Event', backref=db.backref('images', lazy=True)) 
+    
+    # Add the `is_matched` column
+    is_matched = db.Column(Boolean, default=False, nullable=False)
+    
+    event = db.relationship('Event', backref=db.backref('images', lazy=True))
