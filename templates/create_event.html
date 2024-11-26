@@ -19,6 +19,7 @@
         {% endwith %}
 
         <form action="{{ url_for('create_event') }}" method="post">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <input type="text" name="event_name" id="event_name" placeholder="Event Name" class="w-full p-3 mb-4 border rounded-md" required oninput="generateEventId()">
             <input type="date" name="event_date" placeholder="Event Date" class="w-full p-3 mb-4 border rounded-md" required>
             <input type="text" id="event_id" name="event_id" readonly placeholder="Event ID" class="w-full p-3 mb-4 border rounded-md bg-gray-200 text-gray-500">

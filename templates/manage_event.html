@@ -90,6 +90,7 @@
         <div class="bg-white shadow-xl rounded-lg p-8 mb-8">
             <h2 class="text-2xl font-semibold text-gray-800 mb-6">Update Event Details</h2>
             <form action="{{ url_for('manage_event', event_id=event.unique_id) }}" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
                     <input type="text" name="event_name" value="{{ event.name }}" class="w-full p-4 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent" placeholder="Event Name">
                     <input type="date" name="event_date" value="{{ event.date }}" class="w-full p-4 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent" placeholder="Event Date">
@@ -118,6 +119,7 @@
             <h2 class="text-2xl font-semibold text-gray-800 mb-4">Upload Images</h2>
             <form id="uploadForm" onsubmit="handleFileUpload(event)" enctype="multipart/form-data">
                 <input type="file" name="files" multiple class="w-full p-4 mb-6 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"> <!-- CSRF Token -->
                 <button type="submit" class="w-full p-4 bg-green-600 text-white rounded-md hover:bg-green-700 transition duration-300">Upload Images</button>
             </form>
 
@@ -150,6 +152,5 @@
             {% endif %}
         </div>
     </div>
-
 </body>
 </html>
