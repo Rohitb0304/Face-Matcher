@@ -211,3 +211,28 @@ instance/
 This will prevent files like `.env` from being uploaded to GitHub or other repositories.
 
 ---
+
+
+
+GUNICORN RUN CONGIG:
+## gunicorn app:app --workers 2 --timeout 120 --worker-class gthread --threads 4   
+
+### Suggested Configurations:
+
+1. **Low Workers, More Threads**:
+   - This configuration would make sense for an I/O-bound application where you have a smaller number of workers but each can handle multiple concurrent requests.
+   ```bash
+   gunicorn app:app --workers 2 --timeout 120 --worker-class gthread --threads 6
+   ```
+
+2. **Balanced Configuration**:
+   - If you want to use more workers to take advantage of multiple cores while still keeping a moderate number of threads, try this:
+   ```bash
+   gunicorn app:app --workers 4 --timeout 120 --worker-class gthread --threads 4
+   ```
+
+3. **Higher Worker Count for High Traffic**:
+   - If your application has high traffic or you need more parallelism to handle more requests, consider increasing the number of workers while keeping the threads moderate. But keep in mind that more workers will consume more memory.
+   ```bash
+   gunicorn app:app --workers 8 --timeout 120 --worker-class gthread --threads 4
+   ```

@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scan Your Face</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        /* Custom Color Scheme */
+        .bg-dark {
+            background-color: #121212;
+        }        
+
+        .bg-turquoise {
+            background-color: #1abc9c;
+        }
+
+        .bg-turquoise-dark {
+            background-color: #16a085;
+        }
+
+        .text-light {
+            color: #f1f1f1;
+        }
+
+        .highlight {
+            color: #FFD700;
+        }
+
+        .text-muted {
+            color: #aaa;
+        }
+
+        .text-turquoise {
+            color: #1abc9c;
+        }
+
+        .text-red {
+            color: #f44336;
+        }
+
+        .btn-hover {
+            transition: all 0.3s ease;
+        }
+
+        .btn-hover:hover {
+            transform: scale(1.05);
+            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .form-input {
+            border-color: #ddd;
+            padding: 12px;
+            border-radius: 0.375rem;
+            box-shadow: none;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-input:focus {
+            border-color: #1abc9c;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(26, 188, 156, 0.4);
+        }
+
+        .form-btn {
+            background-color: #1abc9c;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 0.375rem;
+            font-size: 1.125rem;
+            transition: background-color 0.3s ease;
+            width: 100%;
+        }
+
+        .form-btn:hover {
+            background-color: #16a085;
+        }
+
+        .back-btn {
+            background-color: #333;
+            color: white;
+            padding: 12px 18px;
+            border-radius: 0.375rem;
+            font-size: 1.125rem;
+            transition: background-color 0.3s ease;
+        }
+
+        .back-btn:hover {
+            background-color: #555;
+        }
+
+        .message-container {
+            margin-bottom: 20px;
+        }
+
+        .message-box {
+            padding: 12px;
+            border-radius: 0.375rem;
+            margin-bottom: 15px;
+            font-size: 1rem;
+            color: #fff;
+        }
+
+        .error {
+            background-color: #f44336;
+        }
+
+        .success {
+            background-color: #4caf50;
+        }
+
+        .info {
+            background-color: #2196f3;
+        }
+
+        .warning {
+            background-color: #ff9800;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            font-size: 1rem;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .form-group input,
+        .form-group button {
+            width: 100%;
+        }
+
+        #video {
+            width: calc(90% - 40px);
+            max-width: calc(60% - 40px);
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            transform: scaleX(-1);
+            aspect-ratio: 4 / 3;
+        }
+
+        #canvas {
+            display: none;
+        }
+
+        /* Loader Styles */
+        .spinner {
+            display: none;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #1abc9c;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 2s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .loading-text {
+            display: none;
+            color: #cdcdcd;
+            font-weight: bold;
+            font-size: 1.8rem;
+            margin-top: 15px;
+        }
+
+/* New Styles for Blurred Image */
+.captured-image-container {
+    display: none;
+    position: relative;
+    width: 80%; /* Reduced the container size to 80% of the parent */
+    max-width: 500px; /* Set a max width for the container */
+    margin: 20px auto; /* Center the container horizontally with margin */
+    text-align: center; /* Center the image horizontally */
+}
+
+.captured-image-container img {
+    width: 100%; /* Ensure the image takes the full width of the container */
+    max-width: 100%; /* Prevent image from exceeding container width */
+    height: auto; /* Maintain aspect ratio */
+    position: relative;
+    filter: blur(10px); /* Apply blur to the captured image */
+    object-fit: contain; /* Ensure image fits within container */
+}
+
+.captured-image-container .overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.5); /* Dark overlay */
+}
+
+.overlay .spinner,
+.overlay .loading-text {
+    display: block; /* Show loader and text inside the overlay */
+    text-align: center; /* Center the loading text and spinner */
+}
+
+
+        /* Card Responsive Styles */
+        .card-container {
+            width: 90%;
+            max-width: 95%; /* Reducing width on larger screens */
+            padding: 20px;
+            margin: 20px auto;
+        }
+
+        /* Mobile-friendly Card */
+        @media (max-width: 768px) {
+            .card-container {
+                padding: 15px;
+                margin: 10px auto;
+                max-width: calc(90% - 40px); /* Adjust max-width for mobile */
+            }
+
+            .form-btn {
+                font-size: 1rem;
+                padding: 12px 18px;
+            }
+
+            .back-btn {
+                font-size: 1rem;
+                padding: 10px 15px;
+            }
+
+            .form-input {
+                padding: 10px;
+            }
+
+            .form-group label {
+                font-size: 0.9rem;
+            }
+
+            .spinner {
+                width: 30px;
+                height: 30px;
+            }
+
+            .loading-text {
+                font-size: 1.2rem;
+            }
+        }
+    </style>
+</head>
+
+<body class="bg-dark min-h-screen flex items-center justify-center py-8">
+
+    <!-- Back Button -->
+    <div class="absolute top-4 left-4">
+        <a href="{{ url_for('index') }}" class="inline-block text-turquoise hover:text-turquoise-dark font-semibold text-lg">
+            <button class="back-btn">Back to Events</button>
+        </a>
+    </div>
+
+    <!-- Card Container -->
+    <div class="card-container bg-white rounded-lg shadow-lg">
+
+        <h1 class="text-2xl font-semibold text-gray-800 mb-6 text-center">Scan Your Face to Find Photos from the Event</h1>
+
+        <!-- Event ID Input Form -->
+        <form method="GET" action="{{ url_for('user_upload') }}" class="bg-white p-6 rounded-lg shadow-md mb-6">
+            <div class="form-group">
+                <label for="event_id" class="text-gray-700">Enter Event ID</label>
+                <input type="text" name="event_id" id="event_id" required class="form-input" placeholder="Enter Event ID">
+            </div>
+            <button type="submit" class="form-btn btn-hover">Submit</button>
+        </form>
+
+        {% if event %}
+        <!-- Event Details -->
+        <h2 class="text-2xl font-semibold mb-4 text-turquoise">Event: {{ event.name }}</h2>
+        <p class="mb-4 text-gray-600">Event Date: {{ event.date }}</p>
+
+        <!-- Flash Messages for Success/Errors -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="message-container">
+            {% for category, message in messages %}
+            <div class="message-box
+                {% if category == 'error' %} error
+                {% elif category == 'success' %} success
+                {% elif category == 'info' %} info
+                {% else %} warning {% endif %}">
+                <p>{{ message }}</p>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% endwith %}
+
+        <!-- Face Scanning Interface -->
+        <div class="form-group" id="camera-container">
+            <label for="camera" class="text-gray-700">Use your Camera</label>
+            <video id="video" autoplay class="sm:max-w-[200px] md:max-w-[300px] lg:max-w-[400px] mx-auto"></video>
+            <canvas id="canvas"></canvas>
+        </div>
+
+        <button type="button" class="form-btn btn-hover" id="capture-btn">Capture Image</button>
+
+        <!-- Loading Spinner and Text -->
+        
+        
+
+        <!-- New Captured Image Section -->
+        <div id="captured-image-container" class="captured-image-container">
+            <img id="captured-image" alt="Captured Image">
+            <div class="overlay">
+                <div>
+                    <div id="loader" class="spinner mt-4 mx-auto"></div>
+                    <div id="loading-text" class="loading-text text-center">Finding your image...</div>
+                </div>
+            </div>
+        </div>
+
+        <form id="scan-form" method="POST" action="{{ url_for('user_upload') }}" enctype="multipart/form-data" style="display:none;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="event_id" value="{{ event.unique_id }}">
+            <input type="hidden" name="image" id="image-data">
+            <button type="submit" style="display:none;" id="submit-scan"></button>
+        </form>
+
+        {% else %}
+        <!-- Error Message for Event not found -->
+        <p class="text-red text-center mt-6 font-semibold">Event not found. Please try again with a valid Event ID.</p>
+        {% endif %}
+    </div>
+
+    <script>
+        // Get video element and canvas
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const captureButton = document.getElementById('capture-btn');
+        const loader = document.getElementById('loader');
+        const loadingText = document.getElementById('loading-text');
+        const imageDataField = document.getElementById('image-data');
+        const capturedImageContainer = document.getElementById('captured-image-container');
+        const capturedImage = document.getElementById('captured-image');
+        const cameraContainer = document.getElementById('camera-container');
+        
+        // Start webcam
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then(stream => {
+                video.srcObject = stream;
+            })
+            .catch(err => console.error("Error accessing webcam: ", err));
+    
+        // Capture image from webcam
+        captureButton.addEventListener('click', function () {
+            // Show loading spinner and text
+            loader.style.display = 'block';
+            loadingText.style.display = 'block';
+    
+            // Set canvas size to a smaller dimension to reduce image size
+            const scaledWidth = 640; // Resize to 640px width
+            const scaledHeight = (scaledWidth / video.videoWidth) * video.videoHeight;
+    
+            canvas.width = scaledWidth;
+            canvas.height = scaledHeight;
+            const context = canvas.getContext('2d');
+            context.drawImage(video, 0, 0, scaledWidth, scaledHeight);
+    
+            // Convert canvas to Base64 with reduced quality
+            const imageData = canvas.toDataURL('image/jpeg', 0.7); // Use JPEG and set quality to 70%
+            imageDataField.value = imageData;
+
+            // Hide the camera and show the captured image with blur
+            cameraContainer.style.display = 'none';
+            capturedImage.src = imageData;
+            capturedImageContainer.style.display = 'block';
+    
+            // Submit the form with a delay to show spinner for 2 seconds
+            setTimeout(() => {
+                document.getElementById("scan-form").submit();
+            }, 2000);  // Delay submission to allow spinner to show for 2 seconds
+        });
+    </script>    
+</body>
+
+</html>

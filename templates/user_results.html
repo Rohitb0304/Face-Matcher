@@ -3,69 +3,183 @@
 
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Matched Faces</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <style>
-        /* Custom Hover Effects */
+        /* Base Styles */
+        body {
+            background-color: #f9fafb; /* Light background for better text visibility */
+            font-family: 'Arial', sans-serif;
+        }
+
+        /* Header Title */
+        .header-title {
+            font-size: 3rem;
+            color: #333; /* Dark text for contrast */
+        }
+
+        .event-name {
+            color: #9b59b6; /* Indigo Color */
+            font-weight: bold;
+        }
+
+        /* Hover Effects for Buttons */
         .btn-hover:hover {
-            transform: scale(1.05);
-            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
-        }
-
-        .card-hover:hover {
-            transform: scale(1.03);
-            box-shadow: 0px 6px 18px rgba(0, 0, 0, 0.2);
-        }
-
-        .img-hover:hover {
             transform: scale(1.1);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.3); /* Stronger 3D effect */
+        }
+
+        /* Image Card Style */
+        .image-card {
+            border-radius: 16px;
+            overflow: hidden;
+            background-color: #5454543a; /* White background for image cards */
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2); /* Subtle shadow for 3D effect */
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            justify-content: center; /* Centers content vertically */
+            align-items: center; /* Centers content horizontally */
+            height: 100%; /* Allow flexible height */
+        }
+
+        .image-card:hover {
+            transform: scale(1.05);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.4); /* More intense shadow on hover */
+        }
+
+        /* Centering the images inside the card */
+        .image-card img {
+            width: auto;
+            height: auto;
+            max-width: 100%; /* Ensure image does not overflow horizontally */
+            max-height: 100%; /* Ensure image does not overflow vertically */
+            object-fit: contain; /* Ensures the image is centered without stretching */
+            margin: auto; /* Center image within the container */
+        }
+
+        /* Event Date and ID Styling */
+        .subheader {
+            color: #333; /* Dark text for better visibility */
+            font-size: 1.2rem;
+        }
+
+        .font-medium {
+            font-weight: 500;
+            color: #333;
+        }
+
+        /* Download Button Styles */
+        .download-btn {
+            background-color: #8e44ad; /* Strong Indigo */
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 1.125rem;
+            transition: background-color 0.3s ease, transform 0.3s ease;
+        }
+
+        .download-btn:hover {
+            background-color: #9b59b6;
+            transform: scale(1.05);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Responsive Grid */
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr); /* 4 columns for larger screens */
+            gap: 1.5rem;
+        }
+
+        @media (max-width: 1024px) {
+            .grid-container {
+                grid-template-columns: repeat(3, 1fr); /* 3 columns for tablets */
+            }
+        }
+
+        @media (max-width: 768px) {
+            .grid-container {
+                grid-template-columns: repeat(2, 1fr); /* 2 columns for mobile devices */
+            }
+        }
+
+        /* Image Card Auto Layout (Flexible height) */
+        .image-card {
+            height: 100%; /* Ensure cards auto adjust to content */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
         }
     </style>
 </head>
 
-<body class="bg-gray-50 font-sans antialiased">
+<body>
 
     <!-- Main Container -->
-    <div class="max-w-6xl mx-auto p-8 bg-white rounded-lg shadow-xl">
+    <div class="max-w-6xl mx-auto p-6 bg-white rounded-lg shadow-lg mt-6">
 
         <!-- Header Section -->
-        <div class="flex justify-between items-center mb-6">
-            <h1 class="text-4xl font-semibold text-gray-900">{{ event.name }}</h1>
-            <div class="flex space-x-4">
-                <a href="{{ url_for('index') }}" class="btn-hover text-white bg-gray-800 hover:bg-gray-700 px-6 py-3 rounded-md transition duration-300">Back to Events</a>
-                <a href="{{ url_for('user_upload') }}" class="btn-hover text-white bg-gray-800 hover:bg-gray-700 px-6 py-3 rounded-md transition duration-300">Back to Uploads</a>
+        <div class="flex flex-col sm:flex-row justify-between items-center mb-6">
+            <h1 class="header-title text-3xl sm:text-4xl text-gray-800">
+                Event Name: <span class="event-name">{{ event.name }}</span>
+            </h1>
+            <div class="flex space-x-4 mt-4 sm:mt-0">
+                <a href="{{ url_for('index') }}"
+                    class="btn-hover text-white bg-indigo-600 hover:bg-indigo-700 px-4 py-2 rounded-md text-base sm:text-lg">
+                    Back to Events
+                </a>
+                <a href="{{ url_for('user_upload') }}"
+                    class="btn-hover text-white bg-indigo-600 hover:bg-indigo-700 px-4 py-2 rounded-md text-base sm:text-lg">
+                    Back to Uploads
+                </a>
             </div>
         </div>
 
         <!-- Event Date -->
-        <p class="text-xl text-gray-600 mb-4">Event Date: <span class="font-semibold text-gray-800">{{ event.date }}</span></p>
+        <p class="subheader text-lg text-gray-600">
+            Event Date: <span class="font-medium text-gray-800">{{ event.date }}</span>
+        </p>
+
+        <!-- Event ID -->
+        <p class="subheader text-lg text-gray-600">
+            Event ID: <span class="font-medium text-gray-800">{{ event.unique_id }}</span>
+        </p>
 
         <!-- Matched Faces Section -->
         {% if matched_images %}
-            <h2 class="text-3xl font-semibold text-gray-900 mb-6">Matched Faces Found</h2>
+        <h2 class="text-2xl sm:text-3xl font-semibold text-gray-900 mt-8 mb-6">Matched Faces Found</h2>
 
-            <!-- Image Grid -->
-            <ul class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-                {% for image in matched_images %}
-                    <li class="bg-white p-6 rounded-xl shadow-lg card-hover transition duration-300">
-                        <img src="{{ image.cloudinary_url }}" alt="{{ image.filename }}" class="w-full h-48 object-cover rounded-md mb-4 img-hover transition-transform duration-300">
-                        <p class="text-center text-base font-medium text-gray-700 truncate">{{ image.filename }}</p>
-                        <div class="flex justify-center mt-4">
+        <!-- Image Grid -->
+        <ul class="grid-container">
+            {% for image in matched_images %}
+            <li>
+                <div class="image-card">
+                    <img src="{{ image.cloudinary_url }}" alt="{{ image.filename }}">
+                    <div class="p-4">
+                        <div class="flex justify-center">
                             <a href="{{ url_for('download_image', image_id=image.id) }}"
-                                class="btn-hover text-white bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-md text-sm transition duration-200">Download</a>
+                                class="btn-hover text-white bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-md text-sm sm:text-base">
+                                Download
+                            </a>
                         </div>
-                    </li>
-                {% endfor %}
-            </ul>
+                    </div>
+                </div>
+            </li>
+            {% endfor %}
+        </ul>
 
-            <!-- Download All Button -->
-            <div class="flex justify-center mt-8">
-                <a href="{{ url_for('download_images_zip', event_id=event.unique_id) }}"
-                    class="btn-hover text-white bg-green-600 hover:bg-green-700 px-8 py-4 rounded-lg text-lg transition duration-300">Download All as ZIP</a>
-            </div>
+        <!-- Download All Button -->
+        <div class="flex justify-center mt-8">
+            <a href="{{ url_for('download_images_zip', event_id=event.unique_id) }}"
+                class="download-btn">
+                Download All as ZIP
+            </a>
+        </div>
         {% else %}
-            <!-- No Matched Faces Found Message -->
-            <p class="text-center text-lg text-gray-600">No matched faces found.</p>
+        <!-- No Matched Faces Found Message -->
+        <p class="text-center text-lg text-gray-600 mt-12">No matched faces found.</p>
         {% endif %}
     </div>
 

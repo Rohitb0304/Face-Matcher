@@ -2,24 +2,91 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Register</title>
-    <link rel="stylesheet" href="https://cdn.tailwindcss.com">
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-
 </head>
 <body class="bg-gradient-to-r from-blue-500 via-purple-600 to-indigo-700 flex items-center justify-center min-h-screen">
-    <div class="w-full max-w-md bg-white p-8 rounded-lg shadow-md">
-        <h2 class="text-3xl font-semibold mb-4">Admin Registration</h2>
-        
-    <div class="w-full max-w-md bg-white p-8 rounded-lg shadow-md">
+
+    <div class="w-full max-w-md bg-white p-8 rounded-lg shadow-lg">
+        <h2 class="text-3xl font-semibold mb-6 text-center text-gray-800">Admin Registration</h2>
+
+        <!-- Display Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="mb-4">
+                    {% for category, message in messages %}
+                        <div class="p-4 rounded-md 
+                            {% if category == 'error' %} bg-red-500 text-white {% endif %}
+                            {% if category == 'success' %} bg-green-500 text-white {% endif %}
+                            {% if category == 'warning' %} bg-yellow-500 text-white {% endif %}
+                        ">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
         <form action="{{ url_for('register') }}" method="post">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <input type="text" name="username" placeholder="Username" class="w-full p-3 mb-4 border rounded-md" required>
-            <input type="password" name="password" placeholder="Password" class="w-full p-3 mb-4 border rounded-md" required>
-            <input type="password" name="confirm_password" placeholder="Confirm Password" class="w-full p-3 mb-4 border rounded-md" required>
-            <button type="submit" class="w-full p-3 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition">Register</button>
+
+            <!-- Full Name -->
+            <div class="mb-4">
+                <input type="text" name="name" placeholder="Full Name" required
+                    class="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-600">
+            </div>
+
+            <!-- Username -->
+            <div class="mb-4">
+                <input type="text" name="username" placeholder="Username" required
+                    class="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-600">
+            </div>
+
+            <!-- Email -->
+            <div class="mb-4">
+                <input type="email" name="email" placeholder="Email" required
+                    class="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-600">
+            </div>
+
+            <!-- Mobile Number with Country Code -->
+            <div class="mb-4 flex space-x-4">
+                <div class="w-1/4">
+                    <select name="country_code" required
+                        class="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-600">
+                        {% for country in country_codes %}
+                            <option value="{{ country['code'] }}">{{ country['code'] }} - {{ country['name'] }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="w-3/4">
+                    <input type="text" name="mobile" placeholder="Mobile Number" required
+                        class="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-600">
+                </div>
+            </div>
+
+            <!-- Password -->
+            <div class="mb-4">
+                <input type="password" name="password" placeholder="Password" required
+                    class="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-600">
+            </div>
+
+            <!-- Confirm Password -->
+            <div class="mb-6">
+                <input type="password" name="confirm_password" placeholder="Confirm Password" required
+                    class="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-600">
+            </div>
+
+            <!-- Register Button -->
+            <button type="submit"
+                class="w-full bg-indigo-600 text-white py-3 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-600">Register</button>
         </form>
+
+        <div class="mt-4 text-center">
+            <a href="{{ url_for('login') }}" class="text-indigo-600 hover:text-indigo-800">Already have an account? Login</a>
+        </div>
+
     </div>
-    </div>
+
 </body>
 </html>

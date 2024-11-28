@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Password Reset Successful</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 50px;
+        }
+        .message {
+            font-size: 1.5em;
+            margin: 20px 0;
+            color: green;
+        }
+        .timer {
+            font-size: 1.2em;
+            color: #555;
+        }
+    </style>
+    <script>
+        let countdown = 5;
+        function startTimer() {
+            const timerElement = document.getElementById('timer');
+            const interval = setInterval(() => {
+                if (countdown > 0) {
+                    countdown--;
+                    timerElement.textContent = countdown;
+                } else {
+                    clearInterval(interval);
+                    window.location.href = "{{ url_for('login') }}";
+                }
+            }, 1000);
+        }
+        window.onload = startTimer;
+    </script>
+</head>
+<body>
+    <h1>Password Reset Successful</h1>
+    <p class="message">Your password has been successfully reset.</p>
+    <p class="timer">Redirecting to login page in <span id="timer">5</span> seconds...</p>
+</body>
+</html>

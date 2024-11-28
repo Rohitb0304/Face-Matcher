@@ -1,30 +1,54 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Create Event</title>
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@2.8.2/dist/alpine.min.js" defer></script>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 </head>
+
 <body class="bg-gradient-to-r from-yellow-400 via-orange-500 to-red-600 min-h-screen flex items-center justify-center">
 
-    <div class="w-full max-w-md bg-white p-8 rounded-lg shadow-md">
-        <h2 class="text-3xl font-semibold mb-4 text-center">Create Event</h2>
+    <div class="w-full max-w-lg bg-white p-8 rounded-lg shadow-lg">
+        <h2 class="text-4xl font-semibold mb-6 text-center text-gray-800">Create Event</h2>
 
         {% with messages = get_flashed_messages() %}
         {% if messages %}
-            <div class="bg-green-100 text-green-800 p-4 mb-4 rounded-md">
-                <strong>{{ messages[0] }}</strong>
-            </div>
+        <div class="bg-green-100 text-green-800 p-4 mb-6 rounded-md shadow-md">
+            <strong>{{ messages[0] }}</strong>
+        </div>
         {% endif %}
         {% endwith %}
 
-        <form action="{{ url_for('create_event') }}" method="post">
+        <form action="{{ url_for('create_event') }}" method="post" class="space-y-6">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <input type="text" name="event_name" id="event_name" placeholder="Event Name" class="w-full p-3 mb-4 border rounded-md" required oninput="generateEventId()">
-            <input type="date" name="event_date" placeholder="Event Date" class="w-full p-3 mb-4 border rounded-md" required>
-            <input type="text" id="event_id" name="event_id" readonly placeholder="Event ID" class="w-full p-3 mb-4 border rounded-md bg-gray-200 text-gray-500">
 
-            <button type="submit" class="w-full p-3 bg-blue-500 text-white rounded-md">Create Event</button>
+            <!-- Event Name Input -->
+            <div class="flex flex-col">
+                <label for="event_name" class="text-lg font-medium text-gray-700 mb-2">Event Name</label>
+                <input type="text" name="event_name" id="event_name" placeholder="Enter event name" class="w-full p-4 border-2 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500" required oninput="generateEventId()">
+            </div>
+
+            <!-- Event Date Input -->
+            <div class="flex flex-col">
+                <label for="event_date" class="text-lg font-medium text-gray-700 mb-2">Event Date</label>
+                <input type="date" name="event_date" placeholder="Select event date" class="w-full p-4 border-2 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500" required>
+            </div>
+
+            <!-- Event ID -->
+            <div class="flex flex-col">
+                <label for="event_id" class="text-lg font-medium text-gray-700 mb-2">Event ID</label>
+                <input type="text" id="event_id" name="event_id" readonly placeholder="Event ID will be generated" class="w-full p-4 border-2 rounded-md bg-gray-200 text-gray-500 shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500">
+            </div>
+
+            <!-- Submit Button -->
+            <div>
+                <button type="submit" class="w-full py-3 bg-blue-600 text-white text-lg font-semibold rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition duration-300">
+                    Create Event
+                </button>
+            </div>
         </form>
     </div>
 
@@ -36,4 +60,5 @@
         }
     </script>
 </body>
+
 </html>

@@ -3,136 +3,10 @@
 
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Scan Your Face</title>
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* Custom Color Scheme */
-        .bg-dark {
-            background-color: #121212;
-        }
-
-        .bg-turquoise {
-            background-color: #1abc9c;
-        }
-
-        .bg-turquoise-dark {
-            background-color: #16a085;
-        }
-
-        .text-light {
-            color: #f1f1f1;
-        }
-
-        .highlight {
-            color: #FFD700;
-        }
-
-        .text-muted {
-            color: #aaa;
-        }
-
-        .text-turquoise {
-            color: #1abc9c;
-        }
-
-        .text-red {
-            color: #f44336;
-        }
-
-        .btn-hover {
-            transition: all 0.3s ease;
-        }
-
-        .btn-hover:hover {
-            transform: scale(1.05);
-            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
-        }
-
-        .form-input {
-            border-color: #ddd;
-            padding: 12px;
-            border-radius: 0.375rem;
-            box-shadow: none;
-            transition: border-color 0.3s ease;
-        }
-
-        .form-input:focus {
-            border-color: #1abc9c;
-            outline: none;
-            box-shadow: 0 0 0 3px rgba(26, 188, 156, 0.4);
-        }
-
-        .form-btn {
-            background-color: #1abc9c;
-            color: white;
-            padding: 15px 20px;
-            border-radius: 0.375rem;
-            font-size: 1.125rem;
-            transition: background-color 0.3s ease;
-            width: 100%;
-        }
-
-        .form-btn:hover {
-            background-color: #16a085;
-        }
-
-        .back-btn {
-            background-color: #333;
-            color: white;
-            padding: 12px 18px;
-            border-radius: 0.375rem;
-            font-size: 1.125rem;
-            transition: background-color 0.3s ease;
-        }
-
-        .back-btn:hover {
-            background-color: #555;
-        }
-
-        .message-container {
-            margin-bottom: 20px;
-        }
-
-        .message-box {
-            padding: 12px;
-            border-radius: 0.375rem;
-            margin-bottom: 15px;
-            font-size: 1rem;
-            color: #fff;
-        }
-
-        .error { background-color: #f44336; }
-        .success { background-color: #4caf50; }
-        .info { background-color: #2196f3; }
-        .warning { background-color: #ff9800; }
-
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        .form-group label {
-            font-size: 1rem;
-            font-weight: bold;
-            margin-bottom: 8px;
-        }
-
-        .form-group input,
-        .form-group button {
-            width: 100%;
-        }
-
-        #video {
-            width: 100%;
-            max-width: 400px;
-            border: 1px solid #ccc;
-            border-radius: 8px;
-        }
-
-        #canvas {
-            display: none;
-        }
-
-        /* Loader Styles */
         .spinner {
             display: none;
             border: 4px solid #f3f3f3;
@@ -144,135 +18,207 @@
         }
 
         @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
         }
 
-        .loading-text {
+        #canvas {
             display: none;
-            color: #000000;
-            font-size: 1.2rem;
-            margin-top: 15px;
+        }
+
+        .blurred-image-container {
+            position: relative;
+            text-align: center;
+            margin: 0 auto;
+        }
+
+        .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .hidden-section {
+            display: none;
+        }
+        #video{
+            transform: scaleX(-1)
         }
     </style>
 </head>
 
-<body class="bg-dark min-h-screen flex items-center justify-center py-8">
+<body class="bg-gray-900 text-white min-h-screen flex flex-col items-center py-4 px-4 md:px-8"
+    data-event="{{ 'true' if event else 'false' }}">
 
     <!-- Back Button -->
-    <div class="absolute top-4 left-4">
-        <a href="{{ url_for('index') }}" class="inline-block text-turquoise hover:text-turquoise-dark font-semibold text-lg">
-            <button class="back-btn">Back to Events</button>
+    <div class="w-full max-w-4xl mb-4">
+        <a href="{{ url_for('index') }}" class="inline-block">
+            <button class="bg-gray-700 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded">
+                Back to Events
+            </button>
         </a>
     </div>
 
-    <div class="max-w-4xl mx-auto p-8 bg-white rounded-lg shadow-lg">
-        <h1 class="text-3xl font-semibold text-gray-800 mb-6 text-center">Scan Your Face to Find Photos from the Event</h1>
+    <!-- Main Card -->
+    <div class="w-full max-w-4xl bg-gray-800 p-6 rounded-lg shadow-lg">
+        <!-- Title -->
+        <h1 class="text-2xl md:text-3xl font-bold text-center mb-4">
+            Scan Your Face to Find Photos from the Event
+        </h1>
 
-        <!-- Event ID Input Form -->
-        <form method="GET" action="{{ url_for('user_upload') }}" class="bg-white p-6 rounded-lg shadow-md mb-6">            
-            <div class="form-group">
-                <label for="event_id" class="text-gray-700">Enter Event ID</label>
-                <input type="text" name="event_id" id="event_id" required class="form-input" placeholder="Enter Event ID">
+        <!-- Event ID Form -->
+        <form method="GET" action="{{ url_for('user_upload') }}" class="mb-6">
+            <div class="mb-4">
+                <label for="event_id" class="block text-lg font-medium text-gray-300 mb-2">
+                    Enter Event ID
+                </label>
+                <input type="text" id="event_id" name="event_id" placeholder="Enter Event ID"
+                    class="w-full px-4 py-2 rounded-md bg-gray-700 text-gray-100 focus:outline-none focus:ring-2 focus:ring-green-500"
+                    required />
             </div>
-            <button type="submit" class="form-btn btn-hover">Submit</button>
+            <button type="submit"
+                class="w-full py-3 bg-green-500 hover:bg-green-400 text-white text-lg font-medium rounded-md">
+                Submit
+            </button>
         </form>
 
         {% if event %}
-        <!-- Event Details -->
-        <h2 class="text-2xl font-semibold mb-4 text-turquoise">Event: {{ event.name }}</h2>
-        <p class="mb-4 text-gray-600">Event Date: {{ event.date }}</p>
+        <!-- Event Information -->
+        <div class="mb-6">
+            <h2 class="text-xl md:text-2xl font-bold text-green-400">
+                Event: {{ event.name }}
+            </h2>
+            <p class="text-gray-400 text-md">
+                Event Date: {{ event.date }}
+            </p>
+        </div>
 
-        <!-- Flash Messages for Success/Errors -->
+        <!-- Flash Messages -->
         {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
-        <div class="message-container">
+        <div class="space-y-2">
             {% for category, message in messages %}
-            <div class="message-box 
-                {% if category == 'error' %} error
-                {% elif category == 'success' %} success
-                {% elif category == 'info' %} info 
-                {% else %} warning {% endif %}">
-                <p>{{ message }}</p>
+            <div class="px-4 py-2 rounded-md
+                {% if category == 'error' %} bg-red-600
+                {% elif category == 'success' %} bg-green-600
+                {% elif category == 'info' %} bg-blue-600
+                {% else %} bg-yellow-600 {% endif %}">
+                {{ message }}
             </div>
             {% endfor %}
         </div>
         {% endif %}
         {% endwith %}
 
-        <!-- Face Scanning Interface -->
-        <div class="form-group">
-            <label for="camera" class="text-gray-700">Use your Camera</label>
-            <video id="video" autoplay></video>
-            <canvas id="canvas"></canvas>
+        <!-- Camera Section (Initially Hidden) -->
+        <div id="camera-section" class="hidden-section">
+            <div id="camera-container" class="text-center mb-6">
+                <label for="camera" class="block text-lg font-medium mb-2">Use Your Camera</label>
+                <video id="video" autoplay class="mx-auto border border-gray-600 rounded-md shadow-md max-w-[90%] sm:max-w-[75%] md:max-w-[60%]"></video>
+                <canvas id="canvas"></canvas>
+            </div>
+            <button id="capture-btn"
+                class="w-full py-3 bg-green-500 hover:bg-green-400 text-white text-lg font-medium rounded-md">
+                Capture Image
+            </button>
         </div>
-        
-        <button type="button" class="form-btn btn-hover" id="capture-btn">Capture Image</button>
 
-        <!-- Loading Spinner and Text -->
-        <div id="loader" class="spinner mt-4 mx-auto"></div>
-        <div id="loading-text" class="loading-text text-center">Finding your image...</div>
+        <!-- Captured Image Section -->
+        <div id="captured-image-section" class="blurred-image-container hidden-section mx-auto text-center">
+            <img id="captured-image" alt="Captured Image" class="w-full max-w-md mx-auto filter blur-md" />
+            <div class="overlay">
+                <div>
+                    <div id="loader" class="spinner mx-auto"></div>
+                    <p id="loading-text" class="text-lg font-semibold text-gray-300 mt-2">Finding your image...</p>
+                </div>
+            </div>
+        </div>
 
-        <form id="scan-form" method="POST" action="{{ url_for('user_upload') }}" enctype="multipart/form-data" style="display:none;">
+        <!-- Hidden Form -->
+        <form id="scan-form" method="POST" action="{{ url_for('user_upload') }}" enctype="multipart/form-data"
+            style="display:none;">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <input type="hidden" name="event_id" value="{{ event.unique_id }}">
             <input type="hidden" name="image" id="image-data">
             <button type="submit" style="display:none;" id="submit-scan"></button>
         </form>
-        
-        <div class="mt-6 text-center">
-            <a href="{{ url_for('index') }}" class="inline-block text-turquoise hover:text-turquoise-dark font-semibold text-lg">
-                <button class="back-btn">Back to Events</button>
-            </a>
-        </div>
-
         {% else %}
-        <!-- Error Message for Event not found -->
-        <p class="text-red text-center mt-6 font-semibold">Event not found. Please try again with a valid Event ID.</p>
+        <p class="text-center text-red-400 mt-6">
+            Event not found. Please try again with a valid Event ID.
+        </p>
         {% endif %}
     </div>
 
     <script>
-        // Get video element and canvas
         const video = document.getElementById('video');
         const canvas = document.getElementById('canvas');
-        const context = canvas.getContext('2d');
         const captureButton = document.getElementById('capture-btn');
+        const cameraSection = document.getElementById('camera-section');
+        const capturedImageSection = document.getElementById('captured-image-section');
+        const capturedImage = document.getElementById('captured-image');
         const loader = document.getElementById('loader');
         const loadingText = document.getElementById('loading-text');
-        const submitButton = document.getElementById('submit-scan');
         const imageDataField = document.getElementById('image-data');
-        
-        // Start webcam
-        navigator.mediaDevices.getUserMedia({ video: true })
-            .then(stream => {
-                video.srcObject = stream;
-            })
-            .catch(err => console.error("Error accessing webcam: ", err));
-    
-        // Capture image from webcam
-        captureButton.addEventListener('click', function () {
-            // Show loading spinner and text
+
+        // Function to enable the camera (invert video feed using JavaScript)
+        function enableCamera() {
+            navigator.mediaDevices.getUserMedia({ video: true })
+                .then(stream => {
+                    video.srcObject = stream;
+
+                    // Invert the camera feed (flip horizontally)
+                    const videoTrack = stream.getTracks()[0];
+                    const capabilities = videoTrack.getCapabilities();
+
+                    // Flip horizontally if possible
+                    if (capabilities.fillLightMode) {
+                        video.style.transform = "scaleX(-1)";
+                    }
+                })
+                .catch(err => console.error('Error accessing webcam:', err));
+
+            cameraSection.classList.remove('hidden-section');
+        }
+
+        // Check if event exists and enable the camera section
+        document.addEventListener('DOMContentLoaded', function() {
+            if (document.body.getAttribute('data-event') === 'true') {
+                enableCamera();
+            }
+        });
+
+        captureButton.addEventListener('click', () => {
             loader.style.display = 'block';
             loadingText.style.display = 'block';
-    
-            // Set canvas size to a smaller dimension to reduce image size
-            const scaledWidth = 640; // Resize to 640px width
-            const scaledHeight = (scaledWidth / video.videoWidth) * video.videoHeight;
-    
-            canvas.width = scaledWidth;
-            canvas.height = scaledHeight;
-            context.drawImage(video, 0, 0, scaledWidth, scaledHeight);
-    
-            // Convert canvas to Base64 with reduced quality
-            const imageData = canvas.toDataURL('image/jpeg', 0.7); // Use JPEG and set quality to 70%
+
+            canvas.width = video.videoWidth / 2;
+            canvas.height = video.videoHeight / 2;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            const imageData = canvas.toDataURL('image/jpeg', 0.7);
             imageDataField.value = imageData;
-    
-            // Submit the form with a delay to show spinner for 2 seconds
+
+            cameraSection.classList.add('hidden-section');
+            capturedImageSection.classList.remove('hidden-section');
+            capturedImage.src = imageData;
+
             setTimeout(() => {
-                document.getElementById("scan-form").submit();
-            }, 2000);  // Delay submission to allow spinner to show for 2 seconds
+                document.getElementById('scan-form').submit();
+            }, 2000);
         });
-    </script>    
+    </script>
 </body>
+
 </html>

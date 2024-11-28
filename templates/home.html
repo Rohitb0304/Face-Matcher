@@ -3,14 +3,42 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Home Page - AI Image Manager</title>
+    <title>ImageVision - AI Image Manager</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Italiana&family=Poppins:wght@400;600&family=Roboto+Slab:wght@400;500&display=swap" rel="stylesheet">
     <style>
         /* Background Gradient */
         body {
-            background: linear-gradient(135deg, #0f0f0f, #121212);
+            background: linear-gradient(135deg, #0a0a0a, #121212);
             font-family: 'Arial', sans-serif;
             color: #eaeaea;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            padding-left: 30px; /* Padding from left */
+            padding-right: 30px; /* Padding from right */
+        }
+
+        /* Title (Increase font size and Italiana font) */
+        h1 {
+            font-family: 'Poppins', sans-serif;
+            font-size: 4rem; /* Increased size */
+            font-weight: 800;
+            margin-bottom: 2rem;
+        }
+
+        h1 .font-Italiana {
+            font-family: 'Italiana', serif;
+            font-size: 4.5rem; /* Larger size for ImageVision text */
+            font-style: italic;
+        }
+
+        @media (min-width: 768px) {
+            body {
+                padding-left: 32px; /* Increase padding on larger screens */
+                padding-right: 32px; /* Increase padding on larger screens */
+            }
         }
 
         /* Animation for fading in */
@@ -23,25 +51,21 @@
             animation: fadeIn 1.5s ease-in-out;
         }
 
-        /* Button Animations */
-        .btn-hover {
-            transition: all 0.3s ease;
-        }
-
-        .btn-hover:hover {
-            transform: scale(1.05);
-            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
-        }
-
         /* Custom Colors */
         .bg-dark { background-color: #121212; }
         .bg-turquoise { background-color: #1abc9c; }
         .bg-turquoise-dark { background-color: #16a085; }
-        .text-light { color: #eaeaea; }
         .text-highlight { color: #FFD700; }
         .text-muted { color: #aaa; }
         .button-primary { background: linear-gradient(135deg, #1abc9c, #16a085); }
         .button-primary:hover { background: linear-gradient(135deg, #16a085, #1abc9c); }
+
+        .create-event {
+        background: linear-gradient(to right, #5590ef, #dd37fa, #dd7a45);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;        
+        }
 
         /* Footer Styles */
         footer {
@@ -50,6 +74,7 @@
             padding: 20px;
             font-size: 14px;
             text-align: center;
+            margin-top: auto;  /* Make footer stick to the bottom */
         }
 
         footer a {
@@ -63,7 +88,6 @@
 
         /* Card Styles */
         .card {
-            background-color: #1abc9c;
             color: #121212;
             padding: 30px;
             border-radius: 12px;
@@ -90,31 +114,57 @@
             font-size: 1rem;
         }
 
+        .card i {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+            color: #fff;
+        }
+
         /* Layout Adjustments */
         .section-container {
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 0 auto;
             padding: 0 20px;
         }
 
         .section-title {
-            font-size: 2.5rem;
+            font-size: 1.8rem;
             font-weight: 700;
             color: #fff;
             margin-bottom: 20px;
         }
 
+        /* Description Text (Larger font for description) */
         .section-description {
-            color: #ccc;
-            font-size: 1.125rem;
-            margin-bottom: 30px;
-            line-height: 1.6;
-            padding: 0 15px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 1.4rem; /* Increased font size */
+            line-height: 1.9rem;
+            color: #D1D5DB; /* Grayish text */
+        }
+
+        /* Additional Information Section (Professional font) */
+        .additional-text p, .additional-text ul {
+            font-family: 'Roboto Slab', serif;
+            font-size: 1.4rem; /* Larger size for better readability */
+            line-height: 1.9rem;
+            color: #9CA3AF; /* Grayish text */
+        }
+
+        /* List Items with Icons */
+        ul.list-inside li {
+            font-family: 'Roboto Slab', serif;
+            font-size: 1.4rem; /* Larger list item text */
+            color: #9CA3AF;
+        }
+
+        /* Enhanced list item with the color */
+        ul.list-inside li span {
+            color: #40E0D0; /* Aqua color for tick marks */
         }
 
         .cta-button {
-            background: linear-gradient(135deg, #1abc9c, #16a085);
-            padding: 15px 30px;
+            background: linear-gradient(135deg, #ff4081, #ff1e63);
+            padding: 15px 15px;
             font-size: 1.5rem;
             color: #fff;
             border-radius: 8px;
@@ -125,23 +175,151 @@
         }
 
         .cta-button:hover {
-            background: linear-gradient(135deg, #16a085, #1abc9c);
+            background: linear-gradient(135deg, #ff1e63, #ff4081);
         }
+
+        /* Mobile Navbar (Hamburger Menu) */
+        .hamburger {
+            display: none;
+            flex-direction: column;
+            justify-content: space-between;
+            width: 25px;
+            height: 20px;
+            cursor: pointer;
+        }
+
+        .hamburger div {
+            width: 100%;
+            height: 4px;
+            background-color: #fff;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+        }
+
+        /* Overlay Styles */
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 50;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            animation: genieIn 0.5s ease-out;
+        }
+
+        .overlay.show {
+            display: flex;
+        }
+
+        /* Keyframes for opening animation */
+@keyframes genieIn {
+    0% {
+        transform: scale(0) translate(-50%, -50%);
+        opacity: 0;
+    }
+    100% {
+        transform: scale(1) translate(0, 0);
+        opacity: 1;
+    }
+}
+
+/* Keyframes for closing animation (to the top-right corner) */
+@keyframes genieOut {
+    0% {
+        transform: scale(1) translate(0, 0);
+        opacity: 1;
+    }
+    100% {
+        transform: scale(0) translate(50%, -50%);
+        opacity: 0;
+    }
+}
+
+/* Overlay styles */
+.overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    z-index: 50;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    opacity: 0;
+    visibility: hidden;
+    transition: visibility 0.5s ease-out, opacity 0.5s ease-out;
+}
+
+.overlay.show {
+    opacity: 1;
+    visibility: visible;
+    animation: genieIn 0.5s ease-out forwards;
+}
+
+.overlay.hide {
+    animation: genieOut 0.5s ease-in forwards;
+    opacity: 0;
+    visibility: hidden;
+}
+
+/* Overlay content styles */
+.overlay ul {
+    list-style: none;
+    padding: 0;
+    color: #fff;
+}
+
+.overlay ul li {
+    font-size: 1.5rem;
+    margin: 20px 0;
+}
+
+.overlay ul li a {
+    text-decoration: none;
+    color: #fff;
+    font-weight: bold;
+    transition: color 0.3s;
+}
+
+.overlay ul li a:hover {
+    color: #1abc9c;
+}
+
+/* Close Button */
+.close-btn {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    font-size: 4rem;
+    color: #fff;
+    cursor: pointer;
+    transition: color 0.3s ease;
+}
+
+.close-btn:hover {
+    color: #1abc9c;
+}
+
+
 
         /* Responsive adjustments */
         @media (max-width: 768px) {
-            .section-container {
-                padding: 0 15px;
+            .hamburger {
+                display: flex;
             }
-            .section-title {
-                font-size: 2rem;
-            }
-            .card {
-                padding: 20px;
-            }
-            .cta-button {
-                font-size: 1.25rem;
-                padding: 12px 24px;
+        }
+
+        @media (min-width: 769px) {
+            .hamburger {
+                display: none;
             }
         }
     </style>
@@ -149,48 +327,227 @@
 <body class="min-h-screen flex flex-col justify-between py-16">
 
     <!-- Navbar -->
-    <div class="absolute top-6 right-6 space-x-4">
-        <a href="{{ url_for('login') }}" class="text-light bg-turquoise py-2 px-4 rounded-lg text-lg hover:bg-turquoise-dark btn-hover">Admin Login</a>
-        <a href="{{ url_for('register') }}" class="text-light bg-turquoise py-2 px-4 rounded-lg text-lg hover:bg-turquoise-dark btn-hover">Admin Register</a>
-    </div>
+    <div class="bg-dark shadow-lg fixed top-0 left-0 w-full z-10">
+        <div class="max-w-screen-xl mx-auto flex justify-between items-center p-4">
+            <div class="text-light text-2xl font-bold">ImageVision</div>
 
-    <!-- Main Content Section -->
-    <div class="text-center mb-12 fade-in">
-        <h1 class="text-5xl font-extrabold mb-6">Welcome to AI Image Manager</h1>
-        <p class="section-description">AI Image Manager helps you effortlessly find, organize, and manage your event images with advanced AI technology.</p>
-        <p class="section-description">Our platform simplifies the process of identifying, sorting, and managing images, making it easy to find and tag images for any event. Whether you’re hosting a small gathering or managing a large-scale event, our AI-powered tools ensure that your images are matched and organized in seconds.</p>
-        <p class="section-description">With AI, your image management is streamlined—automatically detect faces, categorize photos, and download images with just a click.</p>
-    </div>
-
-    <!-- Key Features Section -->
-    <div class="section-container text-center mb-12 fade-in">
-        <h2 class="section-title">Key Features</h2>
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-            <div class="card">
-                <h3>AI-Powered Face Recognition</h3>
-                <p>Automatically recognize and categorize faces in your images to organize them efficiently for your events.</p>
+            <!-- Hamburger Icon (Mobile) -->
+            <div class="hamburger" id="hamburger-icon">
+                <div></div>
+                <div></div>
+                <div></div>
             </div>
-            <div class="card">
-                <h3>Easy Image Management</h3>
-                <p>Find and tag images effortlessly. Quickly sort images into event categories with our smart organization system.</p>
-            </div>
-            <div class="card">
-                <h3>Bulk Image Download</h3>
-                <p>Select multiple images and download them all at once, or get your entire event's image collection in a zip file.</p>
+            <div class="space-x-6 hidden md:flex">
+                <a href="{{ url_for('login') }}" class="text-light py-2 px-4 rounded-lg text-lg hover:bg-turquoise-dark btn-hover">Login</a>
+                <a href="{{ url_for('register') }}" class="text-light py-2 px-4 rounded-lg text-lg hover:bg-turquoise-dark btn-hover">Register</a>
+                <a href="{{ url_for('user_upload') }}" class="text-white bg-blue-600 py-2 px-6 rounded-lg text-lg hover:bg-blue-700 hover:shadow-lg transition-all duration-300">Find Your Event Images</a>
             </div>
         </div>
     </div>
 
-    <!-- Call to Action Button -->
-    <div class="text-center mb-12 fade-in">
-        <a href="{{ url_for('user_upload') }}" class="cta-button">Find Your Images for Your Event</a>
+    <!-- Mobile Overlay Menu -->
+    <div class="overlay" id="mobile-overlay">
+        <div class="close-btn" id="close-overlay">&times;</div>
+        <ul>
+            <li><a href="{{ url_for('login') }}">Login</a></li>
+            <li><a href="{{ url_for('register') }}">Register</a></li>
+            <li><a href="{{ url_for('user_upload') }}">Find Your Event Images</a></li>
+        </ul>
     </div>
 
-    <!-- Footer Section -->
-    <footer>
-        <p>&copy; 2024 AI Image Manager. All Rights Reserved.</p>
-        <p><a href="/">Privacy Policy</a> | <a href="/">Terms of Service</a></p>
-    </footer>
+<!-- Main Content Section -->
+<div class="text-center mb-8 fade-in pt-16 px-4 md:px-8">
+    <!-- Title -->
+    <h1 class="text-6xl font-extrabold text-gray-200 mb-6">
+        Welcome to <span class="font-Italiana bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 text-transparent bg-clip-text">ImageVision</span>
+    </h1>
+    
+    <!-- Description -->
+    <p class="section-description text-2xl md:text-3xl text-gray-400 mb-6 max-w-4xl mx-auto px-2">
+        An AI-powered platform to efficiently manage, tag, and sort your images for events, with automatic face recognition and categorization.
+    </p>
+
+    <!-- Additional Information Section -->
+    <div class="text-2xl md:text-3xl text-gray-400 mb-6 max-w-4xl mx-auto px-2 space-y-6 additional-text">
+        <p>
+            ImageVision harnesses the power of artificial intelligence to streamline the management of your event images. Whether you're organizing personal event photos, corporate event galleries, or large-scale conference images, our platform automatically recognizes faces, categorizes images, and helps you quickly search through thousands of photos.
+        </p>
+
+        <!-- Styled List -->
+        <ul class="list-inside list-disc space-y-4 pl-8 mb-6 text-left">
+            <li class="flex items-center">
+                <span class="mr-3" style="color: #40E0D0;">✔</span>
+                Detects faces and categorizes your images to save your time and effort.
+            </li>
+            <li class="flex items-center">
+                <span class="mr-3" style="color: #40E0D0;">✔</span>
+                Cloud backup ensures your images are safe and accessible from anywhere.
+            </li>
+            <li class="flex items-center">
+                <span class="mr-3" style="color: #40E0D0;">✔</span>
+                The platform gets smarter with use, continually improving its image recognition.
+            </li>
+            <li class="flex items-center">
+                <span class="mr-3" style="color: #40E0D0;">✔</span>
+                Ideal for photographers, event organizers, and businesses to streamline image management.
+            </li>
+        </ul>        
+        <p>
+            ImageVision improves over time as it learns from the images you upload. The more you use it, the smarter it gets, making it an invaluable tool for professional photographers, event organizers, and businesses looking to optimize their image management process.
+        </p>
+    </div>
+</div>
+
+
+
+
+    <!-- CTA Button to Sign Up or Learn More -->
+
+<div class="text-center mt-4 pb-14">
+    <a href="{{ url_for('register') }}" class="cta-button py-3 px-6 bg-turquoise text-white rounded-lg text-xl font-semibold hover:bg-turquoise-dark transition-all duration-300">
+        Get Started with ImageVision
+    </a>
+</div>
+
+
+</div>
+
+
+<!-- Video and Description Container -->
+<div class="flex flex-col md:flex-row justify-center items-center mb-12 px-4 md:px-8 gap-12 pb-14">
+    <!-- Video Section -->
+    <div class="w-full md:w-3/4 lg:w-1/2 mb-6 md:mb-0">
+        <iframe class="w-full h-80 rounded-lg shadow-lg" src="https://www.youtube.com/embed/example-video-id" 
+                title="Demo Video" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+    </div>
+    <!-- Description Section -->
+    <div class="w-full md:w-1/2 md:ml-8">
+        <p class="section-description text-center md:text-left">
+            Watch this demo video to learn how ImageVision simplifies event image management with AI technology.
+        </p>
+    </div>
+</div>
+
+<!-- How It Works Section -->
+<div class="flex flex-col md:flex-row-reverse justify-center items-center mb-12 fade-in px-4 md:px-8 gap-12 pb-14">
+    <!-- Image Section -->
+    <div class="w-full md:w-1/2 mb-6 md:mb-0">
+        <img src="https://res.cloudinary.com/dvdstmxrr/image/upload/v1732732185/concept-facial-recognition-system-with-face-recognition-3d-scanning-interface-futuristic-innovative-technologies-generative-ai_76964-17722-3258635708_ekic1o.jpg" 
+             alt="Face Recognition" class="w-full h-auto rounded-lg shadow-lg">
+    </div>
+    <!-- Text Content Section -->
+    <div class="w-full md:w-1/2 md:ml-8">
+        <h2 class="text-3xl font-semibold text-light mb-4">How Face Recognition Works</h2>
+        <p class="text-light text-lg md:text-xl mb-6">
+            ImageVision utilizes advanced AI and machine learning algorithms to detect and recognize faces in your images. The process works as follows:
+        </p>
+        <ul class="list-none space-y-4 pl-6 mb-6">
+            <li class="flex items-start">
+                <img src="https://img.icons8.com/?size=100&id=110566&format=png&color=000000" alt="Camera" class="w-10 h-10 mr-4">
+                <span class="text-light text-lg md:text-xl">Image Acquisition: The system captures faces from images using cameras or uploaded files.</span>
+            </li>
+            <li class="flex items-start">
+                <img src="https://img.icons8.com/color/64/face-id.png" alt="Face Detection" class="w-10 h-10 mr-4">
+                <span class="text-light text-lg md:text-xl">Face Detection: Using computer vision algorithms, it locates faces within the image.</span>
+            </li>
+            <li class="flex items-start">
+                <img src="https://img.icons8.com/color/64/facial-recognition-scan.png" alt="Landmark Detection" class="w-10 h-10 mr-4">
+                <span class="text-light text-lg md:text-xl">Facial Landmark Identification: The system detects key facial landmarks like eyes, nose, and mouth.</span>
+            </li>
+            <li class="flex items-start">
+                <img src="https://img.icons8.com/color/64/artificial-intelligence.png" alt="Feature Extraction" class="w-10 h-10 mr-4">
+                <span class="text-light text-lg md:text-xl">Feature Extraction: It generates a unique numerical faceprint based on facial features.</span>
+            </li>
+            <li class="flex items-start">
+                <img src="https://img.icons8.com/color/64/compare.png" alt="Face Matching" class="w-10 h-10 mr-4">
+                <span class="text-light text-lg md:text-xl">Face Matching: The generated faceprint is compared with others in the database for identification.</span>
+            </li>
+            <li class="flex items-start">
+                <img src="https://img.icons8.com/?size=100&id=6Q2SAdhaPhXM&format=png&color=000000" alt="Learning and Improvement" class="w-10 h-10 mr-4">
+                <span class="text-light text-lg md:text-xl">Learning and Improvement: The system improves over time, getting smarter with every use.</span>
+            </li>
+        </ul>
+        <p class="text-light text-lg md:text-xl">
+            By automating face recognition, ImageVision saves time and enhances the way you organize and search your event images.
+        </p>
+    </div>
+</div>
+
+<!-- Key Features Section -->
+<div class="section-container text-center mb-12 fade-in pb-14">
+    <h2 class="section-title">Key Features</h2>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-8">
+        <!-- AI-Powered Face Recognition -->
+        <div class="card bg-indigo-600 p-6 rounded-lg shadow-lg transform transition duration-300 hover:scale-105 hover:shadow-2xl">
+            <i class="fas fa-user-friends text-4xl mb-4 text-white"></i>
+            <h3 class="text-xl font-semibold text-white mb-2">AI-Powered Face Recognition</h3>
+            <p class="text-white">Effortlessly categorize your images by recognizing faces with AI.</p>
+        </div>
+
+        <!-- Face Recognition and Tagging -->
+    <div class="card bg-purple-600 p-6 rounded-lg shadow-lg transform transition duration-300 hover:scale-105 hover:shadow-2xl">
+        <i class="fas fa-user-tag text-4xl mb-4 text-white"></i>
+        <h3 class="text-xl font-semibold text-white mb-2">Face Recognition and Tagging</h3>
+        <p class="text-white">Automatically detect and tag faces in your images to organize them easily.</p>
+    </div>
+
+
+        <!-- Smart Image Organization -->
+        <div class="card bg-blue-600 p-6 rounded-lg shadow-lg transform transition duration-300 hover:scale-105 hover:shadow-2xl">
+            <i class="fas fa-cogs text-4xl mb-4 text-white"></i>
+            <h3 class="text-xl font-semibold text-white mb-2">Smart Image Organization</h3>
+            <p class="text-white">Organize your photos by event, tags, or categories automatically.</p>
+        </div>
+
+        <!-- Cloud Backup -->
+        <div class="card bg-green-600 p-6 rounded-lg shadow-lg transform transition duration-300 hover:scale-105 hover:shadow-2xl">
+            <i class="fas fa-cloud-upload-alt text-4xl mb-4 text-white"></i>
+            <h3 class="text-xl font-semibold text-white mb-2">Cloud Backup</h3>
+            <p class="text-white">Automatically back up your images in the cloud for easy access and protection.</p>
+        </div>
+    </div>
+</div>
+
+
+<!-- Call to Action Buttons -->
+<div class="text-center mb-12 fade-in">
+    <a href="{{ url_for('user_upload') }}" class="cta-button">Find Your Event Images</a>
+    <p class="mt-4 text-lg">or <a href="{{ url_for('register') }}" class="create-event font-semibold">create a new event</a></p>
+</div>
+
+<!-- Footer Section -->
+<footer class="bg-dark text-center text-light text-sm">
+    <p><a href="/" class="text-turquoise hover:underline">Privacy Policy</a> | <a href="/" class="text-turquoise hover:underline">Terms of Service</a></p>
+    <p>&copy; 2024 ImageVision. All Rights Reserved.</p>
+</footer>
+
 
 </body>
+
+<script>
+    const hamburgerIcon = document.getElementById('hamburger-icon');
+const overlay = document.getElementById('mobile-overlay');
+const closeOverlay = document.getElementById('close-overlay');
+
+// Open the overlay with animation
+hamburgerIcon.addEventListener('click', function () {
+    overlay.classList.remove('hide');
+    overlay.classList.add('show');
+});
+
+// Close the overlay with animation
+closeOverlay.addEventListener('click', function () {
+    overlay.classList.remove('show');
+    overlay.classList.add('hide');
+});
+
+// Close overlay when clicking outside the menu
+window.addEventListener('click', function (e) {
+    if (!overlay.contains(e.target) && !hamburgerIcon.contains(e.target) && overlay.classList.contains('show')) {
+        overlay.classList.remove('show');
+        overlay.classList.add('hide');
+    }
+});
+
+</script>
 </html>

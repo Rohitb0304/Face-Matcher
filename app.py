@@ -1,16 +1,24 @@
+# LIBRARY IMPORTS
 import hashlib
 import random
 import string
 import io
+import base64
+import json
 import zipfile
 import os
 from io import BytesIO
 import PIL
+import sys
+import bcrypt
+import jwt
+import secrets
+import re
 import requests
 import qrcode
 import cloudinary
 import cloudinary.uploader
-from flask import Flask, jsonify, render_template, request, redirect, send_file, url_for, session, flash, Response
+from flask import Flask, jsonify, render_template, request, redirect, send_file, url_for, session, flash, Response, current_app
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from models import db, Admin, Event, Image
@@ -18,15 +26,29 @@ from config import Config
 from PIL import Image as PILImage
 from datetime import datetime
 import face_recognition
+from werkzeug.exceptions import RequestEntityTooLarge
 from flask_migrate import Migrate
 from flask_wtf.csrf import CSRFProtect
+from flask_mail import Mail
+from tempfile import NamedTemporaryFile
+import shutil
+import logging
+logging.basicConfig(level=logging.DEBUG)
+from admin_auth import AdminAuth
+from flask_bcrypt import Bcrypt
+
 
 app = Flask(__name__)
 app.config.from_object(Config)
+app.config['SESSION_COOKIE_SECURE'] = False  # Set to True if using HTTPS
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'  # Adjust if needed
 app.config['SECRET_KEY'] = '6633b749e8afcc73149c758c29926fc973c31109bdc0f1ce11942c690a025d09'
 
 # Initialize CSRF protection
 csrf = CSRFProtect(app)
+
+bcrypt = Bcrypt(app)
 
 # Initialize database and migration
 db.init_app(app)
@@ -37,7 +59,6 @@ app.config['MAX_CONTENT_LENGTH'] = 30 * 1024 * 1024  # 30MB
 MAX_PIXELS = (1920, 1080)
 ALLOWED_EXTENSIONS = {'jpg', 'jpeg', 'png'}
 
-from werkzeug.exceptions import RequestEntityTooLarge
 
 @app.errorhandler(RequestEntityTooLarge)
 def handle_file_too_large_error(error):
@@ -61,19 +82,22 @@ def index():
     events = Event.query.all()  # Fetch all events from the database
     return render_template('home.html', events=events)
 
-# QR Code Generation Route
 @app.route('/generate_qr_code/<string:event_id>')
 def generate_qr_code(event_id):
+    # Fetch event by its unique ID
     event = Event.query.filter_by(unique_id=event_id).first_or_404()
 
-    # Generate QR code based on Event ID
+    # Construct the full event URL
+    event_url = f"{EVENT_URL_PREFIX}/{event.unique_id}"
+
+    # Generate QR code based on the full event URL
     qr = qrcode.QRCode(
         version=1,
         error_correction=qrcode.constants.ERROR_CORRECT_L,
         box_size=10,
         border=4,
     )
-    qr.add_data(event.unique_id)
+    qr.add_data(event_url)  # Use the full event URL in the QR code
     qr.make(fit=True)
 
     img = qr.make_image(fill="black", back_color="white")
@@ -84,6 +108,7 @@ def generate_qr_code(event_id):
     img_io.seek(0)
 
     return Response(img_io, mimetype='image/png')
+
 
 # Image Hashing Function
 def image_hash(image_data):
@@ -104,44 +129,81 @@ def generate_unique_event_id(event_name):
     
     return unique_event_id
 
-# Register admin route
+mail = Mail(app)
+
+
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
-        confirm_password = request.form['confirm_password']
+        # Pass form data to AdminAuth for processing
+        result = AdminAuth.register_admin(request.form, mail)  # Use current_app.mail to access the Mail instance
+        
+        if result:
+            # If the result is a redirect or something else, handle the response accordingly
+            return result
+        
+        # If there is an issue, flash the error message and stay on the register page
+        flash("An error occurred during registration. Please try again.", 'error')
+        return redirect(url_for('register'))
 
-        if password != confirm_password:
-            flash("Passwords don't match!")
-            return redirect(url_for('register'))
+    # Load country codes from a JSON file located in the static folder
+    try:
+        with open('static/CountryCodes.json') as file:
+            country_codes = json.load(file)
+    except FileNotFoundError:
+        flash("Country codes file not found!", 'error')
+        country_codes = []
 
-        hashed_password = generate_password_hash(password)
-        new_admin = Admin(username=username, password_hash=hashed_password)
-        db.session.add(new_admin)
-        db.session.commit()
+    return render_template('register.html', country_codes=country_codes)
 
-        flash('Admin created successfully! Please log in.')
-        return redirect(url_for('login'))
 
-    return render_template('register.html')
+@app.route('/verify_otp', methods=['GET', 'POST'])
+def verify_otp():
+    if request.method == 'POST':
+        otp = request.form['otp']
+        
+        # Verify OTP using AdminAuth
+        result = AdminAuth.verify_otp(otp)
+
+        if result['success']:
+            flash(result['message'], 'success')  # Display success message
+            return redirect(url_for('login'))  # Redirect to login page
+        else:
+            flash(result['message'], 'error')  # Display error message
+            return redirect(url_for('verify_otp'))  # Stay on the verify OTP page
+
+    return render_template('verify_otp.html')
+
+
 
 # Admin login route
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
+        username = request.form.get('username')
+        password = request.form.get('password')
 
-        admin = Admin.query.filter_by(username=username).first()
-        if admin and check_password_hash(admin.password_hash, password):
-            session['admin'] = admin.id
-            return redirect(url_for('dashboard'))
+        # Validate if username and password are provided
+        if not username or not password:
+            flash("Please enter both username and password to log in.", "error")
+            return redirect(url_for('login'))
 
-        flash('Invalid credentials')
-        return redirect(url_for('login'))
+        # Authenticate login using AdminAuth
+        result = AdminAuth.login_admin(username, password)
 
+        if result['success']:
+            # Successful login
+            session['admin'] = result['admin_id']  # Store admin ID in the session
+            flash(result['message'], 'success')   # Flash a success message
+            return redirect(url_for('dashboard'))  # Redirect to dashboard
+
+        # Flash the error message returned by the login function
+        flash(result['message'], 'error')
+        return redirect(url_for('login'))  # Redirect back to the login page
+
+    # Render login page for GET requests
     return render_template('login.html')
+
 
 # Admin dashboard route
 @app.route('/dashboard')
@@ -162,24 +224,46 @@ def dashboard():
     # Pass both admin and events to the template
     return render_template('dashboard.html', events=events, admin=admin)
 
+# Load the URL prefix from the environment variable
+EVENT_URL_PREFIX = os.getenv("EVENT_URL_PREFIX", "https://yourdomain.com/event/")  # Default to a fallback URL
+
 # Manage event route
 @app.route('/manage_event/<string:event_id>', methods=['GET', 'POST'])
 def manage_event(event_id):
+    # Fetch event by its unique ID
     event = Event.query.filter_by(unique_id=event_id).first_or_404()
-    images = Image.query.filter_by(event_id=event.id).all()  # Fetch images for the event
+    images = Image.query.filter_by(event_id=event.id).all()
+
+    # Construct the full event URL using the prefix from .env
+    event_url = f"{EVENT_URL_PREFIX}{event.unique_id}"
 
     if request.method == 'POST':
+        # Handle the form submission for event details update
         event_name = request.form['event_name']
         event_date = request.form['event_date']
+        
+        try:
+            # Parse the event date (handle the date format)
+            event_date_obj = datetime.strptime(event_date, '%Y-%m-%d').date()
+        except ValueError:
+            flash('Invalid date format. Please use YYYY-MM-DD.', 'danger')
+            return redirect(url_for('manage_event', event_id=event.unique_id))
+        
+        # Update the event details in the database
         event.name = event_name
-        event.date = event_date
-        db.session.commit()
+        event.date = event_date_obj
+        db.session.commit()  # Commit changes to the database
+
+        # Flash a success message after update
         flash('Event details updated successfully!', 'success')
+        
+        # Redirect to the same page to reflect changes
         return redirect(url_for('manage_event', event_id=event.unique_id))
 
-    return render_template('manage_event.html', event=event, images=images)
+    # Render the template with the event and images data, including the generated event URL
+    return render_template('manage_event.html', event=event, images=images, event_url=event_url)
 
-import base64
+
 
 # User image upload route
 @app.route('/user_upload', methods=['GET', 'POST'])
@@ -197,6 +281,8 @@ def user_upload():
     if request.method == 'POST' and 'event_id' in request.form:
         event_id = request.form.get('event_id')
         event = Event.query.filter_by(unique_id=event_id).first_or_404()
+
+        # CSRF token is automatically validated by Flask-WTF during POST request
 
         # Get the base64 image data sent from the frontend (webcam capture)
         image_data = request.form.get('image')
@@ -235,16 +321,17 @@ def user_upload():
             flash(f"Error processing image: {str(e)}. Please upload a valid image.", 'error')
             return redirect(url_for('user_upload', event_id=event_id))
 
-        # Perform face recognition
+        # Perform face recognition (this will be handled similarly to how you've implemented it)
         try:
             uploaded_image = face_recognition.load_image_file(io.BytesIO(img_bytes))
-            uploaded_encoding = face_recognition.face_encodings(uploaded_image)
+            uploaded_encodings = face_recognition.face_encodings(uploaded_image)
 
-            if not uploaded_encoding:
+            if not uploaded_encodings:
                 flash('No face found in the captured image. Please try again with a different photo.', 'error')
                 return redirect(url_for('user_upload', event_id=event_id))
 
-            uploaded_encoding = uploaded_encoding[0]  # Get the first face encoding
+            # Use the first face encoding if multiple faces are detected
+            uploaded_encoding = uploaded_encodings[0]
             matched_images = []
 
             # Compare with faces in the event's images stored in the database
@@ -254,10 +341,17 @@ def user_upload():
                     response.raise_for_status()
 
                     db_image_file = face_recognition.load_image_file(io.BytesIO(response.content))
-                    db_encoding = face_recognition.face_encodings(db_image_file)
+                    db_encodings = face_recognition.face_encodings(db_image_file)
 
-                    if db_encoding and face_recognition.compare_faces([db_encoding[0]], uploaded_encoding, tolerance=0.6)[0]:
-                        matched_images.append(db_image)
+                    # Ensure there is at least one face encoding in the database image
+                    if db_encodings:
+                        # Compare each face encoding from the event image
+                        for db_encoding in db_encodings:
+                            # Compare faces with a stricter tolerance for better accuracy
+                            is_match = face_recognition.compare_faces([db_encoding], uploaded_encoding, tolerance=0.5)[0]
+                            if is_match:
+                                matched_images.append(db_image)
+                                break  # Stop further comparison once a match is found
 
                 except requests.exceptions.RequestException as e:
                     print(f"Error fetching image from Cloudinary URL: {db_image.cloudinary_url}. Error: {e}")
@@ -281,11 +375,6 @@ def user_upload():
     return render_template('user_upload.html')
 
 
-from tempfile import NamedTemporaryFile
-import shutil
-
-import logging
-logging.basicConfig(level=logging.DEBUG)
 
 @app.route('/admin_upload/<string:event_id>', methods=['POST'])
 def admin_upload(event_id):
@@ -385,7 +474,8 @@ def admin_upload(event_id):
         logging.debug(f"Unexpected error: {str(e)}")
         return redirect(url_for('manage_event', event_id=event_id))
 
-    
+
+
 @app.route('/save_image', methods=['POST'])
 def save_image():
     try:
@@ -414,12 +504,13 @@ def save_image():
         db.session.rollback()
         return jsonify(success=False, error=str(e))
 
-# Delete image route
 @app.route('/delete_image/<int:image_id>', methods=['POST'])
 def delete_image(image_id):
     image = Image.query.get_or_404(image_id)
     try:
+        # Delete from Cloudinary
         cloudinary.uploader.destroy(image.public_id)
+        # Delete from database
         db.session.delete(image)
         db.session.commit()
         flash('Image deleted successfully!', 'success')
@@ -428,11 +519,11 @@ def delete_image(image_id):
 
     return redirect(request.referrer)
 
+
 @app.route('/events')
 def events():
     events = Event.query.all()  # Fetch all events from the database
     return render_template('events.html', events=events)
-
 
 # Create event route
 @app.route('/create_event', methods=['GET', 'POST'])
@@ -491,20 +582,20 @@ def download_images_zip(event_id):
     event = Event.query.filter_by(unique_id=event_id).first_or_404()
 
     # Get all matched images for the event (only images that have `is_matched=True`)
-    images = Image.query.filter_by(event_id=event.id, is_matched=True).all()
+    matched_images = Image.query.filter_by(event_id=event.id, is_matched=True).all()
 
-    if not images:
+    if not matched_images:
         flash(f'No matched images found for this event.', 'warning')
         return redirect(request.referrer)  # Redirect the user to the previous page or event page
-    
+
     # Create a BytesIO object to store the zip file in memory
     zip_io = BytesIO()
 
     with zipfile.ZipFile(zip_io, 'w', zipfile.ZIP_DEFLATED) as zip_file:
-        for image in images:
+        for image in matched_images:
             # Download the image from Cloudinary
             response = requests.get(image.cloudinary_url)
-            
+
             if response.status_code == 200:
                 # Write each matched image to the zip file using the filename as the archive name
                 zip_file.writestr(image.filename, response.content)
@@ -522,6 +613,8 @@ def download_images_zip(event_id):
         download_name=f"{event.name}_{event_id}_matched_images.zip",
         mimetype='application/zip'
     )
+
+
 
 @app.route('/delete_event/<event_id>', methods=['POST'])
 def delete_event(event_id):
@@ -543,6 +636,191 @@ def logout():
     session.pop('admin', None)
     flash('You have been logged out.')
     return redirect(url_for('index'))
+
+
+
+
+logger = logging.getLogger('gunicorn.error')
+logger.addHandler(logging.StreamHandler(sys.stdout))
+logger.setLevel(logging.DEBUG)
+
+# Route to display the profile page
+@app.route('/profile', methods=['GET', 'POST'])
+def profile():
+    # Check if the admin is logged in
+    if not session.get('admin'):
+        return redirect(url_for('login'))
+
+    # Get the admin details from the database
+    admin_id = session['admin']
+    admin = Admin.query.get(admin_id)
+
+    if request.method == 'POST':
+        # Update the profile information
+        new_username = request.form.get('username')
+        new_email = request.form.get('email')
+
+        # Ensure the username or email doesn't already exist
+        if new_username != admin.username and Admin.query.filter_by(username=new_username).first():
+            flash('Username already taken.', 'error')
+            return redirect(url_for('profile'))
+
+        if new_email != admin.email and Admin.query.filter_by(email=new_email).first():
+            flash('Email already registered.', 'error')
+            return redirect(url_for('profile'))
+
+        # Update details in the database
+        admin.username = new_username
+        admin.email = new_email
+        db.session.commit()
+
+        flash('Profile updated successfully!', 'success')
+        return redirect(url_for('profile'))
+
+    return render_template('profile.html', admin=admin)
+
+# Route to display the password change settings
+@app.route('/settings', methods=['GET', 'POST'])
+def settings():
+    # Check if the admin is logged in
+    if not session.get('admin'):
+        return redirect(url_for('login'))
+
+    admin_id = session['admin']
+    admin = Admin.query.get(admin_id)
+
+    if request.method == 'POST':
+        # Get the data from the form
+        current_password = request.form.get('current_password')
+        new_password = request.form.get('new_password')
+        confirm_password = request.form.get('confirm_password')
+
+        # Verify the current password
+        if not check_password_hash(admin.password_hash, current_password):
+            flash('Current password is incorrect.', 'error')
+            return redirect(url_for('settings'))
+
+        # Check if new password and confirmation match
+        if new_password != confirm_password:
+            flash("New password and confirmation don't match.", 'error')
+            return redirect(url_for('settings'))
+
+        # Hash the new password and update it
+        hashed_new_password = generate_password_hash(new_password)
+        admin.password_hash = hashed_new_password
+        db.session.commit()
+
+        flash('Password updated successfully!', 'success')
+        return redirect(url_for('settings'))
+
+    return render_template('settings.html', admin=admin)
+
+
+@app.route('/forgot_password', methods=['GET', 'POST'])
+def forgot_password():
+    if request.method == 'POST':
+        email = request.form['email']
+        
+        # Send reset email and get the result
+        result = AdminAuth.send_reset_password_email(email, mail)
+
+        if result['success']:
+            flash("Success! A password reset link has been sent to your email address. Please check your inbox.", "success")
+        else:
+            flash(result['message'], "error")  # Flash the error message if email sending fails
+
+        # Render the same forgot password page so users see the message
+        return redirect(url_for('forgot_password'))
+    
+    return render_template('forgot_password.html')
+
+
+@app.route('/reset_password/<token>', methods=['GET', 'POST'])
+def reset_password(token):
+    try:
+        # Decode the token to retrieve the email
+        data = jwt.decode(token, current_app.config['SECRET_KEY'], algorithms=['HS256'])
+        email = data['email']
+    except jwt.ExpiredSignatureError:
+        flash("The reset link has expired. Please request a new one.", "error")
+        return redirect(url_for('forgot_password'))
+    except jwt.InvalidTokenError:
+        flash("Invalid reset link. Please request a new one.", "error")
+        return redirect(url_for('forgot_password'))
+
+    if request.method == 'POST':
+        password = request.form['password']
+        confirm_password = request.form['confirm_password']
+
+        # Check if passwords match
+        if password != confirm_password:
+            flash("Passwords do not match!", "error")
+            return redirect(url_for('reset_password', token=token))
+
+        # Validate password complexity
+        if len(password) < 8:
+            flash("Password must be at least 8 characters long.", "error")
+            return redirect(url_for('reset_password', token=token))
+        if not re.search(r"[A-Za-z]", password):
+            flash("Password must include at least one letter.", "error")
+            return redirect(url_for('reset_password', token=token))
+        if not re.search(r"\d", password):
+            flash("Password must include at least one number.", "error")
+            return redirect(url_for('reset_password', token=token))
+
+        # Hash the password
+        try:
+            hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
+        except Exception as e:
+            current_app.logger.error(f"Password hashing failed: {e}")
+            flash("An unexpected error occurred while processing your password. Please try again.", "error")
+            return redirect(url_for('reset_password', token=token))
+
+        # Update the admin's password
+        admin = Admin.query.filter_by(email=email).first()
+        if admin:
+            admin.password_hash = hashed_password
+            try:
+                db.session.commit()
+                flash("Your password has been successfully reset! Redirecting to the login page in 5 seconds...", "success")
+                return redirect(url_for('reset_password_success'))
+            except Exception as e:
+                flash("An error occurred while updating the password. Please try again.", "error")
+                current_app.logger.error(f"Error resetting password: {e}")
+                return redirect(url_for('reset_password', token=token))
+        else:
+            flash("User not found.", "error")
+
+    return render_template('reset_password.html', token=token)
+
+
+@app.route('/reset_password_success')
+def reset_password_success():
+    return render_template('reset_success.html')
+
+
+
+
+def generate_nonce(length=32):
+    """
+    Generate a cryptographically secure nonce (random string) of a specified length.
+    The nonce is used to prevent replay attacks and should be unique per request.
+    """
+    # Create a secure random string of letters and digits for the nonce
+    alphabet = string.ascii_letters + string.digits
+    nonce = ''.join(secrets.choice(alphabet) for _ in range(length))
+    return nonce
+
+def generate_state(length=32):
+    """
+    Generate a cryptographically secure state parameter of a specified length.
+    The state is used to prevent CSRF attacks and should be unique per request.
+    """
+    # Create a secure random string for the state parameter
+    alphabet = string.ascii_letters + string.digits
+    state = ''.join(secrets.choice(alphabet) for _ in range(length))
+    return state
+
 
 if __name__ == '__main__':
     app.run(debug=True)

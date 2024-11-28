@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verify OTP</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gradient-to-r from-blue-500 via-purple-600 to-indigo-700 flex items-center justify-center min-h-screen">
+
+    <div class="w-full max-w-md bg-white p-8 rounded-lg shadow-xl">
+        <h2 class="text-3xl font-semibold mb-6 text-center text-gray-800">Verify OTP</h2>
+
+        <!-- OTP sent message -->
+        <div class="mb-6 text-center text-lg text-gray-600">
+            <p class="mb-2">An OTP has been sent to your email address: 
+                <span class="font-bold text-indigo-600">{{ email }}</span> for verification.
+            </p>
+            <p class="text-sm text-gray-500">Please enter the OTP below to complete your registration process.</p>
+        </div>
+
+        <form action="{{ url_for('verify_otp') }}" method="post">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <div class="mb-6">
+                <label for="otp" class="block text-gray-700 font-semibold mb-2">Enter OTP</label>
+                <input type="text" name="otp" id="otp" placeholder="Enter OTP" required
+                    class="w-full p-4 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-600 text-lg shadow-sm">
+            </div>
+
+            <button type="submit"
+                class="w-full bg-indigo-600 text-white py-3 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-600">
+                Verify OTP
+            </button>
+        </form>
+
+        <div class="mt-4 text-center">
+            <a href="{{ url_for('login') }}" class="text-indigo-600 hover:text-indigo-800">Back to Login</a>
+        </div>
+    </div>
+
+</body>
+</html>
